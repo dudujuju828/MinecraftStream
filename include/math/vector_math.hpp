@@ -21,14 +21,12 @@ namespace vecmath {
             }
         }
 
-        Matrix44& scale(const float& scalar) {
+        void scale(const float& scalar) {
             for (int i = 0; i < 16; i++) {
                 if (i != 15) {
                     buffer.at(i) *= scalar; 
                 }
             }
-
-            return *this;
         }
 
         void print_buf() {

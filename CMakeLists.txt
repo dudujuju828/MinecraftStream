@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 project(minecraft)
 
 set(GLAD_DIR ${CMAKE_SOURCE_DIR}/external/glad/)
-add_executable(main src/main.cpp ${GLAD_DIR}/src/glad.c src/camera.cpp)
+add_executable(main src/main.cpp ${GLAD_DIR}/src/glad.c src/camera.cpp src/shader.cpp)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -16,6 +16,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
     GIT_TAG v1.16.0
 )
+
 
 FetchContent_MakeAvailable(glfw spdlog)
 

@@ -11,6 +11,7 @@
 
 #include "../include/math/vector_math.hpp"
 #include "../include/camera.hpp"
+#include "../include/shader.hpp"
 
 const int WIDTH = 800;
 const int HEIGHT = 800;
@@ -54,7 +55,7 @@ int main() {
     std::vector<float> triangle_data {
         0.2f, -0.5f, 0.0f,
         -0.2f, -0.5f, 0.0f,
-        0.0f, 0.0f, 0.0f
+        0.0f, 0.05f,0.0f
     };
 
     GLuint VBO;
@@ -68,46 +69,26 @@ int main() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    std::stringstream buffer;
-    std::ifstream vertex_file("shaders/triangle_vertex.glsl");
-    std::ifstream fragment_file("shaders/triangle_fragment.glsl");
+    Shader program_object("shaders/triangle_vertex.glsl","shaders/triangle_fragment.glsl");
 
-    buffer << vertex_file.rdbuf();
-    std::string vertex_string = buffer.str();
-    const char * vertex_source_cstyle = vertex_string.c_str();
-    GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader,1,&vertex_source_cstyle, nullptr);
-    glCompileShader(vertex_shader);
-
-    buffer.str("");
-    buffer << fragment_file.rdbuf();
-    std::string fragment_string = buffer.str();
-    const char * fragment_source_cstyle = fragment_string.c_str();
-    GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader,1,&fragment_source_cstyle, nullptr);
-    glCompileShader(fragment_shader);
-
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
-    glLinkProgram(program);
 
 
     vecmath::Vector3 camera_position(0.0f,0.0f,3.0f);
     Camera cam(camera_position);
 
     const int buffer_size = 16;
-    float buf[buffer_size] = {1.0f, 0.0f, 0.0f, 0.0f,/* */ 0.0f, 1.0f, 0.0f, 0.0f,
-                             0.0f, 0.0f, 1.0f, 0.0f, /* */0.0f, 0.0f, 0.0f, 1.0f};
+    float buf[buffer_size] = {2.0f, 0.0f, 0.0f, 0.0f,/* */ 0.0f, 1.0f, 0.0f, 0.0f,
+                             0.0f, 0.0f, 0.3f, 0.0f, /* */0.0f, 0.0f, 0.0f, 1.0f};
     
 
 
     vecmath::Matrix44 mat(buf,buffer_size);
-    mat.scale(2.0f);
+    mat.scale(100.0f);
    
+    float scale = 1.0f;
 
-    glUseProgram(program);
-    GLint model_location = glGetUniformLocation(program, "model");
+    program_object.use_program();
+    GLint model_location = glGetUniformLocation(program_object.get_program_id(), "model");
     spdlog::info("model_location: {}",model_location);
     glUniformMatrix4fv(model_location, 1, GL_FALSE, mat.get_buf());
     const float * buf_ptr = mat.get_buf();
@@ -119,11 +100,14 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0.0f,0.7f,0.7f,1.0f);
 
-        model_location = glGetUniformLocation(program, "model");
+        model_location = glGetUniformLocation(program_object.get_program_id(), "model");
         glUniformMatrix4fv(model_location, 1, GL_FALSE, mat.get_buf());
 
+        mat.scale(scale);
+        scale -= 0.00005f;
+
         glBindVertexArray(VAO);
-        glUseProgram(program);
+        program_object.use_program();
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
 
