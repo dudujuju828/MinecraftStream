@@ -9,9 +9,7 @@
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 
-#include "../include/math/vector3.hpp"
-#include "../include/math/vector4.hpp"
-#include "../include/math/matrix44.hpp"
+#include "../include/math/vector_math.hpp"
 #include "../include/camera.hpp"
 
 const int WIDTH = 800;
@@ -95,7 +93,7 @@ int main() {
     glLinkProgram(program);
 
 
-    Vector3 camera_position(0.0f,0.0f,3.0f);
+    vecmath::Vector3 camera_position(0.0f,0.0f,3.0f);
     Camera cam(camera_position);
 
     const int buffer_size = 16;
@@ -104,24 +102,25 @@ int main() {
     
 
 
-    Matrix44 mat(buf,buffer_size);
-    
-
-    mat.scale(5.0f);
+    vecmath::Matrix44 mat(buf,buffer_size);
+    mat.scale(2.0f);
    
 
     glUseProgram(program);
     GLint model_location = glGetUniformLocation(program, "model");
     spdlog::info("model_location: {}",model_location);
-    
-
     glUniformMatrix4fv(model_location, 1, GL_FALSE, mat.get_buf());
+    const float * buf_ptr = mat.get_buf();
+    std::cout << buf_ptr << std::endl;
     
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0.0f,0.7f,0.7f,1.0f);
+
+        model_location = glGetUniformLocation(program, "model");
+        glUniformMatrix4fv(model_location, 1, GL_FALSE, mat.get_buf());
 
         glBindVertexArray(VAO);
         glUseProgram(program);
