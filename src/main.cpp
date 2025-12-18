@@ -53,9 +53,9 @@ int main() {
 
 
     std::vector<float> triangle_data {
-        0.2f, -0.5f, 0.0f,
-        -0.2f, -0.5f, 0.0f,
-        0.0f, 0.05f,0.0f
+        0.2f, -0.5f, 0.1f,
+        -0.2f, -0.5f, 0.1f,
+        0.0f, 0.15f,0.1f
     };
 
     GLuint VBO;
@@ -74,26 +74,22 @@ int main() {
 
 
     vecmath::Vector3 camera_position(0.0f,0.0f,3.0f);
-    Camera cam(camera_position);
-
-    const int buffer_size = 16;
-    float buf[buffer_size] = {2.0f, 0.0f, 0.0f, 0.0f,/* */ 0.0f, 1.0f, 0.0f, 0.0f,
-                             0.0f, 0.0f, 0.3f, 0.0f, /* */0.0f, 0.0f, 0.0f, 1.0f};
-    
+    Camera camera(camera_position);
 
 
-    vecmath::Matrix44 mat(buf,buffer_size);
-    mat.scale(100.0f);
+    vecmath::Matrix44 mat;
    
     float scale = 1.0f;
 
     program_object.use_program();
     GLint model_location = glGetUniformLocation(program_object.get_program_id(), "model");
+    GLint perspective_location = glGetUniformLocation(program_object.get_program_id(), "perspective");
+    GLint view_location = glGetUniformLocation(program_object.get_program_id(), "view");
     spdlog::info("model_location: {}",model_location);
     glUniformMatrix4fv(model_location, 1, GL_FALSE, mat.get_buf());
-    const float * buf_ptr = mat.get_buf();
-    std::cout << buf_ptr << std::endl;
-    
+    glUniformMatrix4fv(perspective_location, 1, GL_FALSE, camera.get_perspective().get_buf());
+    glUniformMatrix4fv(view_location, 1, GL_FALSE, camera.get_view().get_buf());
+
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
@@ -103,8 +99,11 @@ int main() {
         model_location = glGetUniformLocation(program_object.get_program_id(), "model");
         glUniformMatrix4fv(model_location, 1, GL_FALSE, mat.get_buf());
 
-        mat.scale(scale);
-        scale -= 0.00005f;
+        //mat.scale(scale);
+        //scale -= 0.00005f;
+
+        camera.poll_input(window);
+        glUniformMatrix4fv(view_location, 1, GL_FALSE, camera.get_view().get_buf());
 
         glBindVertexArray(VAO);
         program_object.use_program();
