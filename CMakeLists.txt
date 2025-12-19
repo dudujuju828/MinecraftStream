@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 project(minecraft)
 
 set(GLAD_DIR ${CMAKE_SOURCE_DIR}/external/glad/)
-add_executable(main src/main.cpp ${GLAD_DIR}/src/glad.c src/camera.cpp src/shader.cpp)
+add_executable(main src/main.cpp ${GLAD_DIR}/src/glad.c src/camera.cpp src/shader.cpp src/mesh.cpp)
 
 include(FetchContent)
 FetchContent_Declare(

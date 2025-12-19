@@ -22,6 +22,4 @@ class Shader {
     void use_program() const;
     GLint get_program_id() const;
     Shader(std::string vertex_path, std::string fragment_path);
-
-
 };

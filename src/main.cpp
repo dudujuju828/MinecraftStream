@@ -12,6 +12,7 @@
 #include "../include/math/vector_math.hpp"
 #include "../include/camera.hpp"
 #include "../include/shader.hpp"
+#include "../include/mesh.hpp"
 
 const int WIDTH = 800;
 const int HEIGHT = 800;
@@ -89,6 +90,16 @@ int main() {
     glUniformMatrix4fv(model_location, 1, GL_FALSE, mat.get_buf());
     glUniformMatrix4fv(perspective_location, 1, GL_FALSE, camera.get_perspective().get_buf());
     glUniformMatrix4fv(view_location, 1, GL_FALSE, camera.get_view().get_buf());
+
+
+    /*
+    
+    MESH TEST 
+    
+    */
+
+    Mesh mesh("models/complicated.obj");
+
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
