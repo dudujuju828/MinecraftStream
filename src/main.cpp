@@ -79,7 +79,7 @@ int main() {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(0.0f,0.7f,0.7f,1.0f);
         program_object.use_program();
         model_location = glGetUniformLocation(program_object.get_program_id(), "model");

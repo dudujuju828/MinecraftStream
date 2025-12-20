@@ -48,36 +48,36 @@ void Mesh::add_to_a_buffer(const std::string &string_input, const std::string &l
                     // 0
                     int index = std::stoi(current) - 1;
                     if (count == 0) {
-                        combined_vertices.push_back(vertices.at(index));
+                        combined_vertices.push_back(vertices.at((index*3)));
+                        combined_vertices.push_back(vertices.at((index*3) + 1));
+                        combined_vertices.push_back(vertices.at((index*3) + 2));
+                        count ++;
                     }
                     // 1
                     else if (count == 1) {
-                        combined_vertices.push_back(texture_coords.at(index));
+                        combined_vertices.push_back(texture_coords.at(index*2));
+                        combined_vertices.push_back(texture_coords.at((index*2) + 1));
+                        count ++;
                     }
                     // 2
                     else if (count == 2) {
-                        combined_vertices.push_back(normals.at(index));
+                        combined_vertices.push_back(normals.at((index*3)));
+                        combined_vertices.push_back(normals.at((index*3) + 1));
+                        combined_vertices.push_back(normals.at((index*3) + 2));
+                        count ++;
                     }
-                }
-
                 int mod_is_zero = (global_count - 3) % 6; 
                 if (mod_is_zero == 0) {
                     factor += 2;
                 }
                 int mapped_index = global_count - factor;
                 indices.push_back(mapped_index);
-                std::cout << "Global count: " << global_count << '\n';
                 std::cout << "Mapped index: " << mapped_index << '\n';
 
-                count ++;
                 global_count ++;
-            
+        
                 count = 0;
-                
-                std::cout << current;
-                
-                
-                std::cout << "nothing";
+            }
             }
 
                 spdlog::info("String does not have newline: {}", string_input);
@@ -89,11 +89,14 @@ void Mesh::add_to_a_buffer(const std::string &string_input, const std::string &l
 }
 
 void Mesh::setup_buffers(const std::string &f_name) {
+    glFrontFace(GL_CW);
+    glEnable(GL_DEPTH_TEST);
     indices.push_back(0);
     indices.push_back(1);
     indices.push_back(2);
     int global_count = 3;
     int factor = 0;
+
     std::ifstream file(f_name.c_str());
     if (file.is_open()) {
         spdlog::warn("Failed to open file: ", f_name.c_str());
