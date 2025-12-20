@@ -89,8 +89,6 @@ void Mesh::add_to_a_buffer(const std::string &string_input, const std::string &l
 }
 
 void Mesh::setup_buffers(const std::string &f_name) {
-    glFrontFace(GL_CW);
-    glEnable(GL_DEPTH_TEST);
     indices.push_back(0);
     indices.push_back(1);
     indices.push_back(2);
