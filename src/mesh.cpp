@@ -5,18 +5,27 @@
 
 #include <vector>
 #include <fstream>
+#include <sstream>
 #include <iostream>
 
 #include <string>
 #include <stdexcept>
 
-//void Mesh::drawMesh(int program);
+void Mesh::drawMesh(GLuint program) {
+    glBindVertexArray(vertex_array_id);
+    glUseProgram(program);
+
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, indices.data());
+
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
 
 /*
 1. Converts string_input to float
 2. Adds float to specific array dependent on last_type (v, vn, or vt)
 */
-void Mesh::add_to_a_buffer(const std::string &string_input, const std::string &last_type) {
+void Mesh::add_to_a_buffer(const std::string &string_input, const std::string &last_type, int& global_count, int& factor) {
     try {
         float value = std::stof(string_input);
         if (last_type == "v") {
@@ -25,13 +34,66 @@ void Mesh::add_to_a_buffer(const std::string &string_input, const std::string &l
             normals.push_back(value);
         } else if (last_type == "vt") {
             texture_coords.push_back(value);
-        } 
-    } catch (const std::exception &e) {
-            spdlog::warn("invalid: {}",e.what());
+        } else if (last_type == "f") {
+            /* split the string */
+            size_t has_newline = string_input.find('\n'); 
+            if (has_newline != std::string::npos) {
+                spdlog::info("String has newline: {}", string_input);
+            } else {
+                std::istringstream buffer(string_input);
+                std::string current;
+                int count = 0;
+                int face_count = 0;
+                while (std::getline(buffer, current, '/')) {
+                    // 0
+                    int index = std::stoi(current) - 1;
+                    if (count == 0) {
+                        combined_vertices.push_back(vertices.at(index));
+                    }
+                    // 1
+                    else if (count == 1) {
+                        combined_vertices.push_back(texture_coords.at(index));
+                    }
+                    // 2
+                    else if (count == 2) {
+                        combined_vertices.push_back(normals.at(index));
+                    }
+                }
+
+                int mod_is_zero = (global_count - 3) % 6; 
+                if (mod_is_zero == 0) {
+                    factor += 2;
+                }
+                int mapped_index = global_count - factor;
+                indices.push_back(mapped_index);
+                std::cout << "Global count: " << global_count << '\n';
+                std::cout << "Mapped index: " << mapped_index << '\n';
+
+                count ++;
+                global_count ++;
+            
+                count = 0;
+                
+                std::cout << current;
+                
+                
+                std::cout << "nothing";
+            }
+
+                spdlog::info("String does not have newline: {}", string_input);
+            }
+        }
+    catch (const std::exception &e) {
+        spdlog::warn("invalid: {}",e.what());
     }
 }
 
 void Mesh::setup_buffers(const std::string &f_name) {
+    indices.push_back(0);
+    indices.push_back(1);
+    indices.push_back(2);
+    int global_count = 3;
+    int factor = 0;
     std::ifstream file(f_name.c_str());
     if (file.is_open()) {
         spdlog::warn("Failed to open file: ", f_name.c_str());
@@ -41,13 +103,12 @@ void Mesh::setup_buffers(const std::string &f_name) {
     std::string last_type;
     while (std::getline(file,line_i,' ')) {
         std::size_t newline_location = line_i.find("\n");
-
         if (newline_location != std::string::npos) {
             /*A NEWLINE*/
             try {
                 std::string t = line_i.substr(newline_location + 1);
                 std::string value = line_i.substr(0,newline_location);
-                add_to_a_buffer(value,last_type);
+                add_to_a_buffer(value,last_type, global_count,factor);
                 last_type = t;
             } catch (const std::exception &e) {
                 spdlog::warn("out of bounds, {}",e.what());
@@ -55,7 +116,7 @@ void Mesh::setup_buffers(const std::string &f_name) {
 
         } else {
             /* NOT A NEW LINE*/
-            add_to_a_buffer(line_i,last_type);
+            add_to_a_buffer(line_i,last_type, global_count, factor);
        }
     }
 }
@@ -63,27 +124,15 @@ void Mesh::setup_buffers(const std::string &f_name) {
 void Mesh::create_gl_buffers() {
     glGenBuffers(1,&vertex_buffer_id);
     glBindBuffer(GL_ARRAY_BUFFER,vertex_buffer_id);
-    glBufferData(GL_ARRAY_BUFFER,vertices.size()*sizeof(float),vertices.data(),GL_STATIC_DRAW);
-
-    glGenBuffers(1,&texture_buffer_id);
-    glBindBuffer(GL_ARRAY_BUFFER,texture_buffer_id);
-    glBufferData(GL_ARRAY_BUFFER,texture_coords.size()*sizeof(float),texture_coords.data(),GL_STATIC_DRAW);
-
-    glGenBuffers(1,&normal_buffer_id);
-    glBindBuffer(GL_ARRAY_BUFFER,normal_buffer_id);
-    glBufferData(GL_ARRAY_BUFFER,normals.size()*sizeof(float),normals.data(),GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER,combined_vertices.size()*sizeof(float),combined_vertices.data(),GL_STATIC_DRAW);
 
     glGenVertexArrays(1,&vertex_array_id);
     glBindVertexArray(vertex_array_id);
 
     glBindBuffer(GL_ARRAY_BUFFER,vertex_buffer_id);
-    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,3*sizeof(float),(void*)0);
-
-    glBindBuffer(GL_ARRAY_BUFFER,normal_buffer_id);
-    glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,3*sizeof(float),(void*)0);
-
-    glBindBuffer(GL_ARRAY_BUFFER,texture_buffer_id);
-    glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,2*sizeof(float),(void*)0);
+    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)0);
+    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)(3*sizeof(float)));
+    glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)(5*sizeof(float)));
    
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);

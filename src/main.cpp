@@ -48,31 +48,8 @@ int main() {
     } 
     spdlog::info("OpenGL function pointers loaded in successfully.");
 
-    /*
-    OPENGL Specific 
-    */
-
-
-    std::vector<float> triangle_data {
-        0.2f, -0.5f, 0.1f,
-        -0.2f, -0.5f, 0.1f,
-        0.0f, 0.15f,0.1f
-    };
-
-    GLuint VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER,VBO);
-    glBufferData(GL_ARRAY_BUFFER, triangle_data.size()*sizeof(float), triangle_data.data(), GL_STATIC_DRAW);
-
-    GLuint VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    Shader program_object("shaders/triangle_vertex.glsl","shaders/triangle_fragment.glsl");
-
-
+    Shader program_object("shaders/mesh_shader_vertex.glsl","shaders/mesh_shader_fragment.glsl");
+    Mesh mesh("models/cube.obj");
 
     vecmath::Vector3 camera_position(0.0f,0.0f,3.0f);
     Camera camera(camera_position);
@@ -98,27 +75,20 @@ int main() {
     
     */
 
-    Mesh mesh("models/complicated.obj");
-
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0.0f,0.7f,0.7f,1.0f);
-
+        program_object.use_program();
         model_location = glGetUniformLocation(program_object.get_program_id(), "model");
         glUniformMatrix4fv(model_location, 1, GL_FALSE, mat.get_buf());
-
-        //mat.scale(scale);
-        //scale -= 0.00005f;
 
         camera.poll_input(window);
         glUniformMatrix4fv(view_location, 1, GL_FALSE, camera.get_view().get_buf());
 
-        glBindVertexArray(VAO);
-        program_object.use_program();
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        mesh.drawMesh(program_object.get_program_id()); 
 
 
         glfwSwapBuffers(window);
