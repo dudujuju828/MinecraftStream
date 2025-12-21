@@ -89,3 +89,11 @@ void Shader::check_compile_status(GLuint object_id, SHADER_TYPE type) {
 GLint Shader::get_program_id() const {
     return program_id;
 }
+
+void Shader::setMat4(std::string name,vecmath::Matrix44 mat) {
+    glUniformMatrix4fv(glGetUniformLocation(program_id, name.data()), 1, GL_FALSE, mat.get_buf());
+}
+
+void Shader::setInt(std::string name, int val) {
+    glUniform1i(glGetUniformLocation(program_id, name.data()), val);
+}

@@ -16,7 +16,6 @@ class Mesh {
     std::vector<GLuint> indices;
     std::vector<float> normals;
     std::vector<float> texture_coords;
-
     std::vector<float> combined_vertices;
 
     GLuint vertex_buffer_id;

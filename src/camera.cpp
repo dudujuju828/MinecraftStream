@@ -4,9 +4,9 @@
 #include "../include/math/vector_math.hpp"
 
 Camera::Camera(vecmath::Vector3 position_in) : 
-position{position_in}, 
-projection_near{0.10f},
-projection_far{5.0f},
+camera_position{position_in}, 
+projection_near{1.0f},
+projection_far{50.0f},
 projection_left{-1.0f},
 projection_right{1.0f},
 projection_top{1.0f},

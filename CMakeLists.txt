@@ -4,7 +4,8 @@ project(minecraft)
 set(CMAKE_CXX_STANDARD 17)
 
 set(GLAD_DIR ${CMAKE_SOURCE_DIR}/external/glad/)
-add_executable(main src/main.cpp ${GLAD_DIR}/src/glad.c src/camera.cpp src/shader.cpp src/mesh.cpp)
+set(STB_DIR ${CMAKE_SOURCE_DIR}/external/stb/)
+add_executable(main src/main.cpp ${GLAD_DIR}/src/glad.c src/camera.cpp src/shader.cpp src/mesh.cpp src/window.cpp)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -22,4 +23,4 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glfw spdlog)
 
 target_link_libraries(main PRIVATE glfw spdlog)
-target_include_directories(main PRIVATE ${GLAD_DIR}/include/)
+target_include_directories(main PRIVATE ${GLAD_DIR}/include/ ${STB_DIR}/include/)

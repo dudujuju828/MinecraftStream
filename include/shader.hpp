@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../include/math/vector_math.hpp"
 #include <glad/glad.h>
 #include <string>
 
@@ -22,4 +23,6 @@ class Shader {
     void use_program() const;
     GLint get_program_id() const;
     Shader(std::string vertex_path, std::string fragment_path);
+    void setMat4(std::string name,vecmath::Matrix44 mat);
+    void setInt(std::string name, int val);
 };
