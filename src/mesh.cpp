@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 
 #include <string>
 #include <stdexcept>
@@ -43,7 +44,6 @@ void Mesh::add_to_a_buffer(const std::string &string_input, const std::string &l
                 std::istringstream buffer(string_input);
                 std::string current;
                 int count = 0;
-                int face_count = 0;
                 while (std::getline(buffer, current, '/')) {
                     // 0
                     int index = std::stoi(current) - 1;
@@ -66,20 +66,21 @@ void Mesh::add_to_a_buffer(const std::string &string_input, const std::string &l
                         combined_vertices.push_back(normals.at((index*3) + 2));
                         count ++;
                     }
+
+                int mapped_index = 0;
                 int mod_is_zero = (global_count - 3) % 6; 
                 if (mod_is_zero == 0) {
                     factor += 2;
+                    mapped_index = global_count - factor - 1;
+                } else {
+                    mapped_index = global_count - factor;
                 }
-                int mapped_index = global_count - factor;
                 indices.push_back(mapped_index);
-                std::cout << "Mapped index: " << mapped_index << '\n';
-
-                global_count ++;
-        
+                global_count++;
+                
+            }
                 count = 0;
             }
-            }
-
                 spdlog::info("String does not have newline: {}", string_input);
             }
         }
@@ -89,9 +90,12 @@ void Mesh::add_to_a_buffer(const std::string &string_input, const std::string &l
 }
 
 void Mesh::setup_buffers(const std::string &f_name) {
+
+
     indices.push_back(0);
     indices.push_back(1);
     indices.push_back(2);
+
     int global_count = 3;
     int factor = 0;
 
@@ -120,6 +124,8 @@ void Mesh::setup_buffers(const std::string &f_name) {
             add_to_a_buffer(line_i,last_type, global_count, factor);
        }
     }
+
+
 }
 
 void Mesh::create_gl_buffers() {
