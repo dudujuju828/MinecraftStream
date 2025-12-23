@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <iostream>
 #include <exception>
+#include <cmath>
+#include <cassert>
 
 namespace vecmath {
  
@@ -12,6 +14,51 @@ namespace vecmath {
         Vector3(Vector3 &vec_in) : x{vec_in.x}, y{vec_in.y}, z{vec_in.z} {}
         Vector3() : x{0.0f}, y{0.0f}, z{0.0f} {}
         float x,y,z;
+        float length() {
+            float squared_sum = x*x + y*y + z*z;
+            return std::sqrt(squared_sum);
+        }
+        void normalize() {
+            float vec_length = length();
+            assert(vec_length != 0);
+            float one_over_vec_length = 1/vec_length;
+            x *= one_over_vec_length;
+            y *= one_over_vec_length;
+            z *= one_over_vec_length;
+        }
+
+        Vector3 cross(const Vector3 &other_vec) {
+            float x = (this->y * other_vec.z) - (this->z * other_vec.y);
+            float y = (this->z * other_vec.x) - (this->x * other_vec.z);
+            float z = (this->x * other_vec.y) - (this->y * other_vec.x);
+            return Vector3(x,y,z);
+        }
+
+        Vector3& operator*=(float scalar) {
+            x *= scalar;
+            y *= scalar;
+            z *= scalar;
+            return *this;
+        }
+        Vector3& operator+=(const Vector3 &other_vec) {
+            x += other_vec.x;
+            y += other_vec.y;
+            z += other_vec.z;
+            return *this;
+        }
+
+        Vector3& operator-=(const Vector3 &other_vec) {
+            x -= other_vec.x;
+            y -= other_vec.y;
+            z -= other_vec.z;
+            return *this;
+        }
+        Vector3& operator-() {
+            x *= -1.0f;
+            y *= -1.0f;
+            z *= -1.0f;
+            return *this;
+        } 
     };
 
     struct Vector4 {
@@ -20,6 +67,10 @@ namespace vecmath {
         Vector4(Vector3 &vec_in, float w_in) : x{vec_in.x}, y{vec_in.y}, z{vec_in.z}, w{w_in} {}
         Vector4() : x{0.0f}, y{0.0f}, z{0.0f}, w{0.0f} {}
         float x,y,z,w;
+
+        float dot(const Vector4& other) {
+            return this->x*other.x + this->y*other.y + this->z*other.z;
+        }
     };
 
    class Matrix44 {
@@ -41,6 +92,18 @@ namespace vecmath {
                 buffer.at(i) = copy;
             }
         }
+
+        Matrix44& operator*=(const Matrix44& other_matrix) {
+            for (int i = 0; i < 4; i ++) {
+                for (int j = 0; j < 4; j++) {
+                    vecmath::Vector4 left_row = get_row(i);
+                    vecmath::Vector4 right_column = get_col(j);
+                    float i_j_value = left_row.dot(right_column);
+                    buffer.at(i + j*4) = i_j_value;
+                }
+            }
+            return *this;
+        } 
 
         void scale(const float& scalar) {
             for (int i = 0; i < 16; i++) {
@@ -73,9 +136,30 @@ namespace vecmath {
             buffer.at(starting_index+4*1) = v.y;
             buffer.at(starting_index+4*2) = v.z;
             buffer.at(starting_index+4*3) = v.w;
+
         }
 
+        void set_value(int index, float value) {
+            buffer.at(index) = value;
+        }
 
+        vecmath::Vector4 get_row(int row_index) {
+            int starting_index = row_index;
+            float val_x = buffer.at(starting_index);
+            float val_y = buffer.at(starting_index+4*1);
+            float val_z = buffer.at(starting_index+4*2);
+            float val_w = buffer.at(starting_index+4*3);
+            return vecmath::Vector4(val_x,val_y,val_z,val_w);
+        }
+
+        vecmath::Vector4 get_col(int col_index) {
+            int starting_index = col_index;
+            float val_x = buffer.at(starting_index);
+            float val_y = buffer.at(starting_index+1);
+            float val_z = buffer.at(starting_index+2);
+            float val_w = buffer.at(starting_index+3);
+            return vecmath::Vector4(val_x,val_y,val_z,val_w);
+        }
 
     };
 

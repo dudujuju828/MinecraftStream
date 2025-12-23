@@ -32,6 +32,7 @@ Window::Window(int width, int height, std::string name) : window_name{name} {
     } 
     spdlog::info("OpenGL function pointers loaded in successfully.");
 
+    glfwSetInputMode(raw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 }
 
@@ -49,6 +50,9 @@ void Window::swapBuffers() const {
  
 void Window::pollEvents() const {
     glfwPollEvents();
+    if (glfwGetKey(raw_window,GLFW_KEY_ESCAPE)==GLFW_PRESS) {
+        glfwSetWindowShouldClose(raw_window,GLFW_TRUE);
+    }
 }
 void Window::clearScreen() const {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

@@ -29,7 +29,7 @@ int main() {
     Shader program_object("shaders/mesh_shader_vertex.glsl","shaders/mesh_shader_fragment.glsl");
     Mesh mesh("models/cube.obj");
 
-    vecmath::Vector3 camera_position(0.0f,-4.0f,3.0f);
+    vecmath::Vector3 camera_position(0.0f,2.0f,-7.0f);
     Camera camera(camera_position);
 
 
@@ -71,11 +71,13 @@ int main() {
     glActiveTexture(GL_TEXTURE0);
     program_object.setInt("sampler",0);
 
+    /*
+    glfwSetCur 
+    */
 
     glEnable(GL_DEPTH_TEST);
     while (window.notClosed()) {
         window.pollEvents();
-        camera.poll_input(window.getRawWindow());
         window.clearScreen();
 
         program_object.use_program();
@@ -83,9 +85,11 @@ int main() {
         program_object.setMat4("view",camera.get_view());
 
         mesh.drawMesh(program_object.get_program_id());
+        camera.set_view(window.getRawWindow());
+
+       
 
         window.swapBuffers();
     }
-
     return 0;
 }
