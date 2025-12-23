@@ -88,6 +88,10 @@ void Mesh::add_to_a_buffer(const std::string &string_input, const std::string &l
         spdlog::warn("invalid: {}",e.what());
     }
 }
+        
+GLuint Mesh::getVertexArrayID() const {
+    return vertex_array_id;
+}
 
 void Mesh::setup_buffers(const std::string &f_name) {
 

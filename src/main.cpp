@@ -14,6 +14,8 @@
 #include "../include/shader.hpp"
 #include "../include/mesh.hpp"
 #include "../include/window.hpp"
+#include "../include/chunk.hpp"
+#include "../include/object.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -27,7 +29,7 @@ int main() {
 
     Window window(WIDTH,HEIGHT,WINDOW_TITLE);
     Shader program_object("shaders/mesh_shader_vertex.glsl","shaders/mesh_shader_fragment.glsl");
-    Mesh mesh("models/cube.obj");
+    Object obj("models/cube.obj", program_object.get_program_id());
 
     vecmath::Vector3 camera_position(0.0f,0.0f,-7.0f);
     Camera camera(camera_position);
@@ -74,6 +76,15 @@ int main() {
     /*
     glfwSetCur 
     */
+    Chunk chunk("savedata/chunk00.txt");
+    chunk.print();
+
+    program_object.setMat4("model",mat);
+
+    /*FIRST OPTIMIZATION*/
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
+    glCullFace(GL_FRONT);
 
     glEnable(GL_DEPTH_TEST);
     while (window.notClosed()) {
@@ -81,13 +92,24 @@ int main() {
 
         program_object.use_program();
 
-        program_object.setMat4("model",mat);
 
         camera.update(window.getRawWindow());
         program_object.setMat4("view",camera.get_view());
-        mesh.drawMesh(program_object.get_program_id());
-        mesh.drawMesh(program_object.get_program_id());
 
+
+        for (int i = 0; i < chunk.SIZE; i++) {
+            for (int j = 0; j < chunk.SIZE; j++) {
+                for (int k = 0; k < chunk.SIZE; k++) {
+                    obj.bind();
+
+                    obj.setPosition(vecmath::Vector3(((float)i*2.0f) ,((float)j*2.0f),((float)k*2.0f)));
+                    obj.updateModelMatrix();
+                    program_object.setMat4("model",obj.getModelMatrix());
+
+                    obj.draw();
+                }
+            }
+        }
        
 
         window.pollEvents();

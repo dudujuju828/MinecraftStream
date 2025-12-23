@@ -10,10 +10,11 @@ class Mesh {
     public:
     void drawMesh(GLuint program);
     Mesh(std::string obj_file);
+    GLuint getVertexArrayID() const;
+    std::vector<GLuint> indices;
 
     private:
     std::vector<float> vertices;
-    std::vector<GLuint> indices;
     std::vector<float> normals;
     std::vector<float> texture_coords;
     std::vector<float> combined_vertices;
