@@ -6,6 +6,8 @@
 #include <exception>
 #include <cmath>
 #include <cassert>
+#include <spdlog/spdlog.h>
+
 
 namespace vecmath {
  
@@ -47,18 +49,32 @@ namespace vecmath {
             return *this;
         }
 
+        Vector3& operator*(const float scale) {
+            x *= scale;
+            y *= scale;
+            z *= scale;
+            return *this;
+        }
+
         Vector3& operator-=(const Vector3 &other_vec) {
             x -= other_vec.x;
             y -= other_vec.y;
             z -= other_vec.z;
             return *this;
         }
-        Vector3& operator-() {
-            x *= -1.0f;
-            y *= -1.0f;
-            z *= -1.0f;
-            return *this;
+        Vector3 operator-() {
+            float x_copy = this->x;
+            float y_copy = this->y;
+            float z_copy = this->z;
+            x_copy *= -1.0f;
+            y_copy *= -1.0f;
+            z_copy *= -1.0f;
+            return Vector3(x_copy,y_copy,z_copy);
         } 
+
+        void print() {
+            spdlog::info("VecX: {}\nVecY: {}\nVecZ: {}",x,y,z);
+        }
     };
 
     struct Vector4 {
@@ -68,7 +84,7 @@ namespace vecmath {
         Vector4() : x{0.0f}, y{0.0f}, z{0.0f}, w{0.0f} {}
         float x,y,z,w;
 
-        float dot(const Vector4& other) {
+        float dot(const Vector4& other) const {
             return this->x*other.x + this->y*other.y + this->z*other.z;
         }
     };
@@ -96,8 +112,8 @@ namespace vecmath {
         Matrix44& operator*=(const Matrix44& other_matrix) {
             for (int i = 0; i < 4; i ++) {
                 for (int j = 0; j < 4; j++) {
-                    vecmath::Vector4 left_row = get_row(i);
-                    vecmath::Vector4 right_column = get_col(j);
+                    vecmath::Vector4 left_row = this->get_row(i);
+                    vecmath::Vector4 right_column = other_matrix.get_col(j);
                     float i_j_value = left_row.dot(right_column);
                     buffer.at(i + j*4) = i_j_value;
                 }
@@ -131,7 +147,7 @@ namespace vecmath {
         }
 
         void set_row(vecmath::Vector4 v, int row_index) {
-            int starting_index = row_index*4;
+            int starting_index = row_index;
             buffer.at(starting_index) = v.x;
             buffer.at(starting_index+4*1) = v.y;
             buffer.at(starting_index+4*2) = v.z;
@@ -152,8 +168,8 @@ namespace vecmath {
             return vecmath::Vector4(val_x,val_y,val_z,val_w);
         }
 
-        vecmath::Vector4 get_col(int col_index) {
-            int starting_index = col_index;
+        vecmath::Vector4 get_col(int col_index) const {
+            int starting_index = col_index*4;
             float val_x = buffer.at(starting_index);
             float val_y = buffer.at(starting_index+1);
             float val_z = buffer.at(starting_index+2);

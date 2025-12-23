@@ -26,6 +26,9 @@ class Camera {
    float pitch;
    float yaw;
    float mouse_sensitivity;
+   float fly_speed;
+   float lastTime;
+   float deltaTime;
     
    void set_perspective(float n_p, float f_p, float l_x, float r_x, float b_y, float t_y);
    //void set_position(vecmath::Vector3 position);
@@ -36,6 +39,6 @@ class Camera {
    vecmath::Matrix44& get_perspective();
    vecmath::Vector3& get_position();
    vecmath::Matrix44& get_view();
-   void set_view(GLFWwindow * window);
+   void update(GLFWwindow * window);
    void poll_input(GLFWwindow * window);
  };

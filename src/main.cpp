@@ -29,7 +29,7 @@ int main() {
     Shader program_object("shaders/mesh_shader_vertex.glsl","shaders/mesh_shader_fragment.glsl");
     Mesh mesh("models/cube.obj");
 
-    vecmath::Vector3 camera_position(0.0f,2.0f,-7.0f);
+    vecmath::Vector3 camera_position(0.0f,0.0f,-7.0f);
     Camera camera(camera_position);
 
 
@@ -50,7 +50,7 @@ int main() {
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
     int width, height, nrChannel;
-    unsigned char* image_data = stbi_load("textures/cubemaps_skybox.png",&width,&height,&nrChannel,0);
+    unsigned char* image_data = stbi_load("textures/dirt_block.png",&width,&height,&nrChannel,0);
     // check image data exists (later)
     GLenum type;
     switch (nrChannel) {
@@ -77,18 +77,20 @@ int main() {
 
     glEnable(GL_DEPTH_TEST);
     while (window.notClosed()) {
-        window.pollEvents();
         window.clearScreen();
 
         program_object.use_program();
-        program_object.setMat4("model",mat);
-        program_object.setMat4("view",camera.get_view());
 
+        program_object.setMat4("model",mat);
+
+        camera.update(window.getRawWindow());
+        program_object.setMat4("view",camera.get_view());
         mesh.drawMesh(program_object.get_program_id());
-        camera.set_view(window.getRawWindow());
+        mesh.drawMesh(program_object.get_program_id());
 
        
 
+        window.pollEvents();
         window.swapBuffers();
     }
     return 0;
