@@ -30,12 +30,6 @@ const std::string WINDOW_TITLE = "GRAPHICS WINDOW";
 /* process: when chunk loaded, upload chunk data to the gpu */
 /* technically: building the mesh, calling glBufferData / subData */
 
-struct Vertex {
-    Vertex() = default;
-
-    float x, y, z, u, v, w;
-};
-/* chunk[0][2][5] */
 
 
 
@@ -58,7 +52,32 @@ int main() {
 
     /* chunk creation */
     Chunk chunk("savedata/chunk00.txt");
-    chunk.print();
+    std::vector<Vertex> chunk_vertex = chunk.constructMesh();
+    GLuint VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    std::vector<float> flattened_data;
+    for (auto &vertex : chunk_vertex) {
+        /* potential problem with xyz xzy*/
+        flattened_data.push_back(vertex.x);
+        flattened_data.push_back(vertex.y);
+        flattened_data.push_back(vertex.z);
+        flattened_data.push_back(vertex.u);
+        flattened_data.push_back(vertex.v);
+        flattened_data.push_back(vertex.w);
+    }
+    glBufferData(GL_ARRAY_BUFFER, flattened_data.size() * sizeof(float), flattened_data.data(), GL_STATIC_DRAW);
+
+    GLuint VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+
 
 
     /* 2d texture array*/
@@ -112,55 +131,10 @@ int main() {
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
     program_object.setInt("array_sampler",0);
 
-    /*raw cube data*/
-    float vertices[] = {
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 0.0f
-         0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 0.0f
-
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 0.0f
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 0.0f
-
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f
-        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 0.0f
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f
-
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f
-         0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 0.0f
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f
-
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f
-         0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0.0f
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 0.0f
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f
-
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f
-        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 0.0f
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f
-    };
-
-
-
     /* gl properties */
     glEnable(GL_DEPTH_TEST);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     /* main loop */
     while (window.notClosed()) {
@@ -177,13 +151,8 @@ int main() {
         for (int i = 0; i < chunk.SIZE; i++) {
             for (int j = 0; j < chunk.SIZE; j++) {
                 for (int k = 0; k < chunk.SIZE; k++) {
-                    obj.bind();
-
-                    obj.setPosition(vecmath::Vector3(((float)i*2.0f) ,((float)j*2.0f),((float)k*2.0f)));
-                    obj.updateModelMatrix();
-                    program_object.setMat4("model",obj.getModelMatrix());
-
-                    obj.draw();
+                    glBindVertexArray(VAO);
+                    glDrawArrays(GL_TRIANGLES, 0, flattened_data.size()/6);
                 }
             }
         }
