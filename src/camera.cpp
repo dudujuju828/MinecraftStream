@@ -8,7 +8,7 @@
 
 Camera::Camera(vecmath::Vector3 position_in) : 
 camera_position{position_in}, 
-projection_near{0.5f},
+projection_near{1.0f},
 projection_far{80.0f},
 projection_left{-1.0f},
 projection_right{1.0f},

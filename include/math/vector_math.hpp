@@ -176,7 +176,5 @@ namespace vecmath {
             float val_w = buffer.at(starting_index+3);
             return vecmath::Vector4(val_x,val_y,val_z,val_w);
         }
-
     };
-
 };
