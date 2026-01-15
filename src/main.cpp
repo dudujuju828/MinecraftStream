@@ -16,22 +16,12 @@
 #include "../include/window.hpp"
 #include "../include/chunk.hpp"
 #include "../include/object.hpp"
+#include "../include/texture.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 
 const int WIDTH = 800;
 const int HEIGHT = 800;
 const std::string WINDOW_TITLE = "GRAPHICS WINDOW";
-
-/* currently: 1 cube, many-draw-calls per cube position*/
-/* wanted: mesh, created depending on chunk*/
-/* relationship: mesh depend on chunk */
-/* process: when chunk loaded, upload chunk data to the gpu */
-/* technically: building the mesh, calling glBufferData / subData */
-
-
-
 
 int main() {
 
@@ -77,11 +67,11 @@ int main() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    std::vector<string> file_list {"textures/dirt_block.png"};
+    std::vector<std::string> file_list {"textures/ice_block.png","textures/dirt_block.png","textures/stone_block.png"};
 
     // cleaner setup
-    Texture texture_object(GL_TEXTURE_ARRAY_2D, file_list, 32, 32);
-    texture_object.setActiveTextureUnit(program, "array_sampler", 0);
+    Texture texture_object(GL_TEXTURE_2D_ARRAY, file_list, 32, 32);
+    texture_object.setActiveTextureUnit(program_object, "array_sampler", 0);
 
     /* gl properties */
     glEnable(GL_DEPTH_TEST);
@@ -104,7 +94,6 @@ int main() {
             else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             toggle = !toggle;
         }
-
 
         /* chunk drawing */
         for (int i = 0; i < chunk.SIZE; i++) {

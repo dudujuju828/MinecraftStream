@@ -3,7 +3,9 @@
 #include <vector>
 #include <string_view>
 #include <string>
+#include <unordered_map>
 #include "../include/math/vector_math.hpp"
+
 
 enum class cube_face {
     LEFT,
@@ -16,7 +18,9 @@ enum class cube_face {
 
 enum class BLOCK_TYPE {
     AIR,
-    DIRT
+    DIRT,
+    ICE,
+    STONE
 };
 
 struct Vertex {
@@ -31,9 +35,6 @@ class Chunk {
 
     std::vector<Vertex> constructMesh();
     void print() const;
-
-
-
     const int SIZE = 16;
     vecmath::Vector3 position;
 
@@ -41,4 +42,9 @@ class Chunk {
     void addFace(std::vector<Vertex> &vertex_vector, const cube_face& face_type, int x_offset, int y_offset, int z_offset, int texture_type);
     std::vector<BLOCK_TYPE> chunk;
     BLOCK_TYPE getBlock(int x, int z, int y);
+    const std::unordered_map<BLOCK_TYPE,int> block_texture_map {
+        {BLOCK_TYPE::ICE,0},
+        {BLOCK_TYPE::DIRT,1},
+        {BLOCK_TYPE::STONE,2}
+    };
 };

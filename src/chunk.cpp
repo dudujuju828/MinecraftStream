@@ -21,6 +21,11 @@ Chunk::Chunk(std::string_view filename, vecmath::Vector3 pos) : position{pos} {
                 case 1:
                 chunk.push_back(BLOCK_TYPE::DIRT); 
                 break;
+                case 2:
+                chunk.push_back(BLOCK_TYPE::ICE);
+                break;
+                case 3:
+                chunk.push_back(BLOCK_TYPE::STONE);
                 default:
                 chunk.push_back(BLOCK_TYPE::DIRT); 
                 break;
@@ -70,33 +75,39 @@ std::vector<Vertex> Chunk::constructMesh() {
                     top_block = getBlock(x, z, y+1);
                 }
                 if (z <= 0) {
-                    addFace(v, cube_face::FRONT, x,z,y, 1);
+                    //addFace(v, cube_face::FRONT, x,z,y, 1);
                 } else {
                     if (z-1 < SIZE) front_block = getBlock(x, z-1, y);
                 }
                 if (z + 1 >= SIZE) {
-                    addFace(v, cube_face::BACK, x,z,y, 0);
+                    //addFace(v, cube_face::BACK, x,z,y, 0);
                 } else {
                     back_block = getBlock(x, z+1, y);
                 }
+                auto it = block_texture_map.find(current_block);
+                int block_type;
+                if (it != block_texture_map.end()) {
+
+                    block_type = it->second;
+                }
 
                 if (top_block == BLOCK_TYPE::AIR) {
-                    addFace(v, cube_face::TOP, x, z, y, 0);
+                    addFace(v, cube_face::TOP, x, z, y, block_type);
                 }
                 if (bottom_block == BLOCK_TYPE::AIR) {
-                    addFace(v, cube_face::BOTTOM, x, z, y, 0);
+                    addFace(v, cube_face::BOTTOM, x, z, y, block_type);
                 }
                 if (left_block == BLOCK_TYPE::AIR) {
-                    addFace(v, cube_face::LEFT, x, z, y, 0);
+                    addFace(v, cube_face::LEFT, x, z, y,  block_type);
                 }
                 if (right_block == BLOCK_TYPE::AIR) {
-                    addFace(v, cube_face::RIGHT, x, z, y, 0);
+                    addFace(v, cube_face::RIGHT, x, z, y, block_type);
                 }
                 if (front_block == BLOCK_TYPE::AIR) {
-                    addFace(v, cube_face::FRONT, x, z, y, 0);
+                    addFace(v, cube_face::FRONT, x, z, y, block_type);
                 }
                 if (back_block == BLOCK_TYPE::AIR) {
-                    addFace(v, cube_face::BACK, x, z, y, 0);
+                    addFace(v, cube_face::BACK, x, z, y,  block_type);
                 }
                 
             }
