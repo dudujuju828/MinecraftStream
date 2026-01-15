@@ -1,5 +1,6 @@
 
 #include "../include/chunk.hpp"
+#include "../include/math/vector_math.hpp"
 #include <iostream>
 #include <string_view>
 #include <fstream>
@@ -7,7 +8,7 @@
 #include <spdlog/spdlog.h>
 #include <algorithm>
 
-Chunk::Chunk(std::string_view filename) {
+Chunk::Chunk(std::string_view filename, vecmath::Vector3 pos) : position{pos} {
     std::ifstream file(filename.data());
     std::string file_line;
     while(std::getline(file, file_line, ',')) {
@@ -32,9 +33,9 @@ Chunk::Chunk(std::string_view filename) {
 
 std::vector<Vertex> Chunk::constructMesh() {
     std::vector<Vertex> v;
-    for (int x = 0; x < SIZE; x++) {
+    for (int y = 0; y < SIZE; y++) {
         for (int z = 0; z < SIZE; z++) {
-            for (int y = 0; y < SIZE; y++) {
+            for (int x = 0; x < SIZE; x++) {
                 /* check the neighbouring 6 blocks */
                 /* assume air */
                 BLOCK_TYPE current_block = getBlock(x,z,y);
@@ -48,7 +49,7 @@ std::vector<Vertex> Chunk::constructMesh() {
 
                 /* I think the IF conditions are all wrong here*/
                 /* continue on the edge cases LIKELY WRONG, but avoids index crashing*/
-                if (x - 1 <= 0) {
+                if (x <= 0) {
                     //addFace(v, cube_face::LEFT, x,z,y, 1);
                 } else {
                     if (x-1 < SIZE) left_block = getBlock(x-1,z,y);
@@ -58,44 +59,44 @@ std::vector<Vertex> Chunk::constructMesh() {
                 } else {
                     right_block = getBlock(x+1, z, y);
                 }
-                if (y - 1 <= 0) {
-                    addFace(v, cube_face::TOP, x,z,y, 1);
+                if (y <= 0) {
+                    //addFace(v, cube_face::TOP, x,z,y, 1);
                 } else {
                     if (y - 1 < SIZE) bottom_block = getBlock(x, z, y-1);
                 }
-                if (y + 1 <= SIZE) {
-                    addFace(v, cube_face::BOTTOM, x,z,y, 1);
+                if (y + 1 >= SIZE) {
+                    //addFace(v, cube_face::BOTTOM, x,z,y, 1);
                 } else {
                     top_block = getBlock(x, z, y+1);
                 }
-                if (z - 1 <= 0) {
+                if (z <= 0) {
                     addFace(v, cube_face::FRONT, x,z,y, 1);
                 } else {
                     if (z-1 < SIZE) front_block = getBlock(x, z-1, y);
                 }
-                if (z + 1 <= SIZE) {
-                    addFace(v, cube_face::BACK, x,z,y, 1);
+                if (z + 1 >= SIZE) {
+                    addFace(v, cube_face::BACK, x,z,y, 0);
                 } else {
                     back_block = getBlock(x, z+1, y);
                 }
 
                 if (top_block == BLOCK_TYPE::AIR) {
-                    addFace(v, cube_face::TOP, x, z, y, 2);
+                    addFace(v, cube_face::TOP, x, z, y, 0);
                 }
                 if (bottom_block == BLOCK_TYPE::AIR) {
-                    addFace(v, cube_face::BOTTOM, x, z, y, 2);
+                    addFace(v, cube_face::BOTTOM, x, z, y, 0);
                 }
                 if (left_block == BLOCK_TYPE::AIR) {
-                    addFace(v, cube_face::LEFT, x, z, y, 2);
+                    addFace(v, cube_face::LEFT, x, z, y, 0);
                 }
                 if (right_block == BLOCK_TYPE::AIR) {
-                    addFace(v, cube_face::RIGHT, x, z, y, 2);
+                    addFace(v, cube_face::RIGHT, x, z, y, 0);
                 }
                 if (front_block == BLOCK_TYPE::AIR) {
-                    addFace(v, cube_face::FRONT, x, z, y, 2);
+                    addFace(v, cube_face::FRONT, x, z, y, 0);
                 }
                 if (back_block == BLOCK_TYPE::AIR) {
-                    addFace(v, cube_face::BACK, x, z, y, 2);
+                    addFace(v, cube_face::BACK, x, z, y, 0);
                 }
                 
             }
@@ -110,6 +111,9 @@ BLOCK_TYPE Chunk::getBlock(int x, int z, int y) {
 }
 
 void Chunk::addFace(std::vector<Vertex> &vertex_vector, const cube_face& face_type, int x_offset, int z_offset, int y_offset, int texture_type) {
+    x_offset += position.x * SIZE;
+    y_offset += position.y * SIZE;
+    z_offset += position.z * SIZE;
     switch(face_type) {
         case cube_face::FRONT:
             vertex_vector.push_back(Vertex(0.0f + x_offset, 0.0f + y_offset, 0.0f + z_offset, 0.0f, 0.0f, texture_type));

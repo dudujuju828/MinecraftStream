@@ -3,6 +3,7 @@
 #include <vector>
 #include <string_view>
 #include <string>
+#include "../include/math/vector_math.hpp"
 
 enum class cube_face {
     LEFT,
@@ -25,10 +26,17 @@ struct Vertex {
 
 class Chunk {
     public:
-    const int SIZE = 16;
-    Chunk(std::string_view file_name);
-    void print() const;
+    Chunk(std::string_view file_name, vecmath::Vector3 position);
+
+
     std::vector<Vertex> constructMesh();
+    void print() const;
+
+
+
+    const int SIZE = 16;
+    vecmath::Vector3 position;
+
     private:
     void addFace(std::vector<Vertex> &vertex_vector, const cube_face& face_type, int x_offset, int y_offset, int z_offset, int texture_type);
     std::vector<BLOCK_TYPE> chunk;

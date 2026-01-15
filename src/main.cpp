@@ -38,7 +38,6 @@ int main() {
     /* initial setup */
     Window window(WIDTH,HEIGHT,WINDOW_TITLE);
     Shader program_object("shaders/mesh_shader_vertex.glsl","shaders/mesh_shader_fragment.glsl");
-    Object obj("models/cube.obj", program_object.get_program_id());
 
     /* transforms */
     vecmath::Vector3 camera_position(0.0f,0.0f,-7.0f);
@@ -51,7 +50,8 @@ int main() {
     program_object.setMat4("view",camera.get_view());
 
     /* chunk creation */
-    Chunk chunk("savedata/chunk00.txt");
+    vecmath::Vector3 chunk_position(0,0,1);
+    Chunk chunk("savedata/chunk00.txt", chunk_position);
     std::vector<Vertex> chunk_vertex = chunk.constructMesh();
     GLuint VBO;
     glGenBuffers(1, &VBO);
@@ -77,64 +77,17 @@ int main() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    std::vector<string> file_list {"textures/dirt_block.png"};
 
-
-
-    /* 2d texture array*/
-    GLuint tex;
-    glGenTextures(1,&tex);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY,
-                GL_TEXTURE_MIN_FILTER,
-                GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY,
-                GL_TEXTURE_MAG_FILTER,
-                GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    const int tex_count = 5;
-    const int image_width = 256;
-    const int image_height = 256;
-    std::vector<const char*> file_list = {
-        "textures/blue.png",
-        "textures/orange.png",
-        "textures/red.png",
-        "textures/green.png",
-        "textures/brown.png",
-    };
-    std::vector<unsigned char*> image_ptr_list(tex_count,nullptr);
-    int width, height, nrChannel, format;
-    glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
-    glActiveTexture(GL_TEXTURE0);   
-    unsigned char* image_data_second = stbi_load("textures/red.png",&width,&height,&nrChannel,0);
-    if (image_data_second) {
-        spdlog::warn("Data-loaded");
-    }
-    GLenum type;
-    switch (nrChannel) {
-        case 3:
-            type = GL_RGB;
-            break;
-        case 4:
-            type = GL_RGBA;
-            break;
-        default:
-            type = GL_RGB;
-            break;
-    }
-    glTexImage3D(GL_TEXTURE_2D_ARRAY,0,type,image_width,image_height,tex_count,0,type,GL_UNSIGNED_BYTE,NULL);
-    for (int i = 0; i < 5; i++) {
-        int x, y;
-        image_ptr_list.at(i) = stbi_load(file_list.at(i),&x,&y,&format,0);
-        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, image_width, image_height, 1, type, GL_UNSIGNED_BYTE, image_ptr_list.at(i));
-    }
-    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
-    program_object.setInt("array_sampler",0);
+    // cleaner setup
+    Texture texture_object(GL_TEXTURE_ARRAY_2D, file_list, 32, 32);
+    texture_object.setActiveTextureUnit(program, "array_sampler", 0);
 
     /* gl properties */
     glEnable(GL_DEPTH_TEST);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    bool toggle = true;
 
     /* main loop */
     while (window.notClosed()) {
@@ -145,6 +98,12 @@ int main() {
 
         camera.update(window.getRawWindow());
         program_object.setMat4("view",camera.get_view());
+
+        if (glfwGetKey(window.getRawWindow(), GLFW_KEY_P)) {
+            if (toggle) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            toggle = !toggle;
+        }
 
 
         /* chunk drawing */

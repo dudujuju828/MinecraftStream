@@ -6,6 +6,9 @@
 #include <cstdlib>
 #include "../include/window.hpp"
 
+static void window_callback(GLFWwindow* window, int width, int height) {
+    glViewport(0,0,width,height);
+}
 
 /* CAN ONLY USE 1 WINDOW ATM */
 Window::Window(int width, int height, std::string name) : window_name{name} {
@@ -33,6 +36,7 @@ Window::Window(int width, int height, std::string name) : window_name{name} {
     spdlog::info("OpenGL function pointers loaded in successfully.");
 
     glfwSetInputMode(raw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetWindowSizeCallback(raw_window,window_callback);
 
 }
 
