@@ -76,7 +76,8 @@ int main() {
     /* gl properties */
     glEnable(GL_DEPTH_TEST);
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPointSize(5.0f);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
     bool toggle = true;
 
     /* main loop */
