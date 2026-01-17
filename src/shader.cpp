@@ -7,9 +7,11 @@
 #include <sstream>
 
 Shader::Shader(std::string vertex_path, std::string fragment_path) {
+    spdlog::info("Loading shader.");
     compile_shader(vertex_path, SHADER_TYPE::VERTEX_SHADER);
     compile_shader(fragment_path, SHADER_TYPE::FRAGMENT_SHADER);
     create_program(vertex_id, fragment_id);
+    spdlog::info("Loaded shader.");
 }
 
 void Shader::use_program() const {

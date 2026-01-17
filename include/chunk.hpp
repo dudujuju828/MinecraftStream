@@ -1,5 +1,9 @@
 
 #pragma once
+
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 #include <vector>
 #include <string_view>
 #include <string>
@@ -20,7 +24,8 @@ enum class BLOCK_TYPE {
     AIR,
     DIRT,
     ICE,
-    STONE
+    STONE,
+    REDSTONE
 };
 
 struct Vertex {
@@ -33,18 +38,31 @@ class Chunk {
     Chunk(std::string_view file_name, vecmath::Vector3 position);
 
 
-    std::vector<Vertex> constructMesh();
+    void constructMesh();
     void print() const;
     const int SIZE = 16;
     vecmath::Vector3 position;
+    void setBlock(BLOCK_TYPE b_type, int x, int z, int y);
+    void destroyBlock(int x, int z, int y);
+    void reconstruct();
+    int getChunkBufferSize() const;
+    void draw();
 
     private:
+    int bufferSize;
+    int vertexCount;
+    bool _is_initialized;
+    GLuint VBO;
+    GLuint VAO;
+    bool _dirty;
     void addFace(std::vector<Vertex> &vertex_vector, const cube_face& face_type, int x_offset, int y_offset, int z_offset, int texture_type);
     std::vector<BLOCK_TYPE> chunk;
-    BLOCK_TYPE getBlock(int x, int z, int y);
+    BLOCK_TYPE getBlock(int x, int z, int y) const;
     const std::unordered_map<BLOCK_TYPE,int> block_texture_map {
-        {BLOCK_TYPE::ICE,0},
-        {BLOCK_TYPE::DIRT,1},
-        {BLOCK_TYPE::STONE,2}
+        {BLOCK_TYPE::REDSTONE, 0},
+        {BLOCK_TYPE::ICE,1},
+        {BLOCK_TYPE::DIRT,2},
+        {BLOCK_TYPE::STONE,3}
+
     };
 };

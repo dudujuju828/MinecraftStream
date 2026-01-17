@@ -40,34 +40,10 @@ int main() {
     program_object.setMat4("view",camera.get_view());
 
     /* chunk creation */
-    vecmath::Vector3 chunk_position(0,0,1);
+    vecmath::Vector3 chunk_position(0,0,0);
     Chunk chunk("savedata/chunk00.txt", chunk_position);
-    std::vector<Vertex> chunk_vertex = chunk.constructMesh();
-    GLuint VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    std::vector<float> flattened_data;
-    for (auto &vertex : chunk_vertex) {
-        /* potential problem with xyz xzy*/
-        flattened_data.push_back(vertex.x);
-        flattened_data.push_back(vertex.y);
-        flattened_data.push_back(vertex.z);
-        flattened_data.push_back(vertex.u);
-        flattened_data.push_back(vertex.v);
-        flattened_data.push_back(vertex.w);
-    }
-    glBufferData(GL_ARRAY_BUFFER, flattened_data.size() * sizeof(float), flattened_data.data(), GL_STATIC_DRAW);
-
-    GLuint VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    std::vector<std::string> file_list {"textures/ice_block.png","textures/dirt_block.png","textures/stone_block.png"};
+    std::vector<std::string> file_list {"textures/redstone_block.png","textures/ice_block.png","textures/dirt_block.png","textures/stone_block.png"};
+    chunk.reconstruct();
 
     // cleaner setup
     Texture texture_object(GL_TEXTURE_2D_ARRAY, file_list, 32, 32);
@@ -76,36 +52,41 @@ int main() {
     /* gl properties */
     glEnable(GL_DEPTH_TEST);
 
-    glPointSize(5.0f);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     bool toggle = true;
+
+
+    int x = 0.0f;
+    int y = 0.0f;
+    int z = 3.0f;
+
 
     /* main loop */
     while (window.notClosed()) {
         window.clearScreen();
 
+        /* chunk drawing */
         program_object.use_program();
-
-
+        chunk.reconstruct();
+        chunk.draw();
         camera.update(window.getRawWindow());
         program_object.setMat4("view",camera.get_view());
+
+
 
         if (glfwGetKey(window.getRawWindow(), GLFW_KEY_P)) {
             if (toggle) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             toggle = !toggle;
         }
-
-        /* chunk drawing */
-        for (int i = 0; i < chunk.SIZE; i++) {
-            for (int j = 0; j < chunk.SIZE; j++) {
-                for (int k = 0; k < chunk.SIZE; k++) {
-                    glBindVertexArray(VAO);
-                    glDrawArrays(GL_TRIANGLES, 0, flattened_data.size()/6);
-                }
+      
+        if (glfwGetKey(window.getRawWindow(), GLFW_KEY_G)) {
+            for(auto i : {0,10}) {
+                x+=i;
+                chunk.destroyBlock(x,y,z);
             }
         }
-       
+      
 
         window.pollEvents();
         window.swapBuffers();

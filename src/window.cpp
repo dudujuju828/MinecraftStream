@@ -37,7 +37,6 @@ Window::Window(int width, int height, std::string name) : window_name{name} {
 
     glfwSetInputMode(raw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowSizeCallback(raw_window,window_callback);
-
 }
 
 GLFWwindow* Window::getRawWindow() {

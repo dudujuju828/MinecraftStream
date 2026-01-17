@@ -1,4 +1,7 @@
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 #include "../include/chunk.hpp"
 #include "../include/math/vector_math.hpp"
 #include <iostream>
@@ -8,7 +11,8 @@
 #include <spdlog/spdlog.h>
 #include <algorithm>
 
-Chunk::Chunk(std::string_view filename, vecmath::Vector3 pos) : position{pos} {
+
+Chunk::Chunk(std::string_view filename, vecmath::Vector3 pos) : position{pos}, _is_initialized{false}, _dirty{true} {
     std::ifstream file(filename.data());
     std::string file_line;
     while(std::getline(file, file_line, ',')) {
@@ -36,7 +40,38 @@ Chunk::Chunk(std::string_view filename, vecmath::Vector3 pos) : position{pos} {
     }
 }
 
-std::vector<Vertex> Chunk::constructMesh() {
+void Chunk::draw() {
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+}
+
+void Chunk::reconstruct() {
+
+    if (_dirty) {
+        constructMesh();
+        //final step is to reupload data (done in constructMesh)
+    }
+    _dirty = false;
+
+}
+
+void Chunk::constructMesh() {
+
+    if (!_is_initialized) {
+        glGenBuffers(1, &VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, 216 * SIZE * SIZE * SIZE * sizeof(float), NULL, GL_STREAM_DRAW);
+        glGenVertexArrays(1, &VAO);
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
+        glEnableVertexAttribArray(1);
+        _is_initialized = true;
+    }
+
     std::vector<Vertex> v;
     for (int y = 0; y < SIZE; y++) {
         for (int z = 0; z < SIZE; z++) {
@@ -44,6 +79,7 @@ std::vector<Vertex> Chunk::constructMesh() {
                 /* check the neighbouring 6 blocks */
                 /* assume air */
                 BLOCK_TYPE current_block = getBlock(x,z,y);
+                if (current_block == BLOCK_TYPE::AIR) continue;
                 BLOCK_TYPE top_block = BLOCK_TYPE::AIR;
                 BLOCK_TYPE bottom_block = BLOCK_TYPE::AIR;
                 BLOCK_TYPE left_block = BLOCK_TYPE::AIR;
@@ -89,7 +125,7 @@ std::vector<Vertex> Chunk::constructMesh() {
                 if (it != block_texture_map.end()) {
 
                     block_type = it->second;
-                }
+                } 
 
                 if (top_block == BLOCK_TYPE::AIR) {
                     addFace(v, cube_face::TOP, x, z, y, block_type);
@@ -114,10 +150,41 @@ std::vector<Vertex> Chunk::constructMesh() {
         }
     }
 
-    return v;
+    bufferSize = v.size() * 6 * sizeof(float);
+    vertexCount = v.size();
+
+    if (!_is_initialized) {
+        glGenBuffers(1, &VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, bufferSize, NULL, GL_STREAM_DRAW);
+        glGenVertexArrays(1, &VAO);
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
+        glEnableVertexAttribArray(1);
+        _is_initialized = true;
+    }
+
+    std::vector<float> flattened_data;
+    if (_dirty)  {
+        for (auto &vertex : v) {
+            /* potential problem with xyz xzy*/
+            flattened_data.push_back(vertex.x);
+            flattened_data.push_back(vertex.y);
+            flattened_data.push_back(vertex.z);
+            flattened_data.push_back(vertex.u);
+            flattened_data.push_back(vertex.v);
+            flattened_data.push_back(vertex.w);
+        }
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, flattened_data.size() * sizeof(float), flattened_data.data(), GL_STATIC_DRAW);
+    }
+
 }
 
-BLOCK_TYPE Chunk::getBlock(int x, int z, int y) {
+BLOCK_TYPE Chunk::getBlock(int x, int z, int y) const {
     return chunk.at(x + (16*z) + (16*16*y));
 }
 
@@ -185,6 +252,18 @@ void Chunk::addFace(std::vector<Vertex> &vertex_vector, const cube_face& face_ty
             vertex_vector.push_back(Vertex(0.0f + x_offset, 0.0f + y_offset, 1.0f + z_offset, 0.0f, 1.0f, texture_type));
             break;
     }
+}
+
+void Chunk::setBlock(BLOCK_TYPE b_type, int x, int y, int z) {
+    _dirty = true;
+    chunk.at(x + (16*z) + (16*16*y)) = b_type;
+}
+
+void Chunk::destroyBlock(int x, int y, int z) {
+    setBlock(BLOCK_TYPE::AIR, x, y, z);
+}
+int Chunk::getChunkBufferSize() const {
+    return bufferSize;
 }
 
 void Chunk::print() const {
