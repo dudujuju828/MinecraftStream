@@ -68,7 +68,6 @@ Chunk::Chunk(std::string_view filename, int x, int y, int z) : position{x,y,z}, 
     }
 }
 void Chunk::draw() {
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, vertexCount);
 }

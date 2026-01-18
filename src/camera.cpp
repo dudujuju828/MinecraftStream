@@ -8,22 +8,29 @@
 
 Camera::Camera(vecmath::Vector3 position_in) : 
 camera_position{position_in}, 
+default_height{position_in.y},
 projection_near{1.0f},
 projection_far{80.0f},
 projection_left{-1.0f},
 projection_right{1.0f},
 projection_top{1.0f},
 projection_bottom{-1.0f},
-front{vecmath::Vector3(0.1f,0.1f,0.0f)},
+front{vecmath::Vector3(0.0f,0.0f,1.0f)},
 world_up{vecmath::Vector3(0.0f,1.0f,0.0f)},
-lastX{1.0},
-lastY{1.0},
-pitch{100.0f},
-yaw{0.0f},
+lastX{205.1},
+lastY{200.1},
+pitch{89.5f},
+yaw{90.0f},
 fly_speed{5.0f},
 mouse_sensitivity{1.0f},
 lastTime{0.0f},
-deltaTime{0.0f}
+deltaTime{0.0f},
+firstMouse{true},
+is_fps{true},
+in_jump{false},
+jump_speed{-1.21f},
+default_jump_speed{-1.21f},
+gravity{0.018f}
 {
     set_perspective(projection_near,projection_far,projection_left,projection_right,projection_bottom,projection_top);
 }
@@ -55,8 +62,14 @@ void Camera::update(GLFWwindow * window) {
     lastX = xpos;
     lastY = ypos;
 
-    pitch -= deltay * mouse_sensitivity;
-    yaw   += deltax * mouse_sensitivity;
+    if (!firstMouse) {
+        pitch -= deltay * mouse_sensitivity;
+        yaw   += deltax * mouse_sensitivity;
+    }
+    if (firstMouse) {
+        firstMouse = false;
+    }
+
     if (pitch < 1.0f) {
         pitch = 1.0f;
     }
@@ -93,30 +106,64 @@ vecmath::Matrix44& Camera::get_view() {
     return view_matrix;
 }
 
-vecmath::Vector3 &Camera::get_position() {
+vecmath::Vector3 Camera::get_position() {
     return camera_position;
 }
 
 void Camera::poll_input(GLFWwindow * window) {
-    float speed = fly_speed * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera_position += front * speed;
+    if (is_fps) {
+         float speed = fly_speed * deltaTime;
+         vecmath::Vector3 f_copy = front;
+         f_copy.y = 0.0f;
+         f_copy.normalize();
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+            camera_position += f_copy * speed;
+        }
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+            camera_position -= f_copy * speed;
+        }
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+            camera_position -= right * speed;
+        }
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+            camera_position += right * speed;
+        }
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+            if (in_jump != true) {
+                in_jump = true;
+            }
+        }
+        if (in_jump) {
+            jump_speed += gravity;
+            camera_position.y += jump_speed * speed;
+        }
+        if (camera_position.y > default_height) {
+                camera_position.y = default_height;
+                in_jump = false;
+                jump_speed = default_jump_speed;
+            }
+    } else {
+        float speed = fly_speed * deltaTime;
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+            camera_position += front * speed;
+        }
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+            camera_position -= front * speed;
+        }
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+            camera_position -= right * speed;
+        }
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+            camera_position += right * speed;
+        }
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+            camera_position -= up * speed;
+        }
+        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+            camera_position += up * speed;
+        }
     }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera_position -= front * speed;
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera_position -= right * speed;
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera_position += right * speed;
-    }
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-        camera_position -= up * speed;
-    }
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-        camera_position += up * speed;
-    }
+    
 }
 
 vecmath::Matrix44& Camera::get_perspective() {

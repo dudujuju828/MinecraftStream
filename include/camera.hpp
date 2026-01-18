@@ -29,6 +29,13 @@ class Camera {
    float fly_speed;
    float lastTime;
    float deltaTime;
+   bool firstMouse;
+   bool is_fps;
+   bool in_jump;
+   float jump_speed;
+   float default_jump_speed;
+   float gravity;
+   float default_height;
     
    void set_perspective(float n_p, float f_p, float l_x, float r_x, float b_y, float t_y);
    //void set_position(vecmath::Vector3 position);
@@ -37,7 +44,7 @@ class Camera {
    public: 
    Camera(vecmath::Vector3);
    vecmath::Matrix44& get_perspective();
-   vecmath::Vector3& get_position();
+   vecmath::Vector3 get_position();
    vecmath::Matrix44& get_view();
    void update(GLFWwindow * window);
    void poll_input(GLFWwindow * window);

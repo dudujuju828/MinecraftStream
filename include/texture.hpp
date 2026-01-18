@@ -12,8 +12,8 @@
 class Texture {
 public:
 
-    Texture(GLenum type, std::vector<std::string> &file_list, int image_width, int image_height); 
-    void setActiveTextureUnit(Shader& s, std::string uniform_name, int tex_unit);
+    Texture(GLenum type, std::vector<std::string> &file_list, int image_width, int image_height, int tex_unit); 
+    void bindToTextureUnit(int tex_unit);
 
 private:
     GLenum type;

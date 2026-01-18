@@ -93,9 +93,19 @@ GLint Shader::get_program_id() const {
 }
 
 void Shader::setMat4(std::string name,vecmath::Matrix44 mat) {
+    glUseProgram(program_id);
     glUniformMatrix4fv(glGetUniformLocation(program_id, name.data()), 1, GL_FALSE, mat.get_buf());
+    glUseProgram(0);
+}
+
+void Shader::setVec3(std::string name, vecmath::Vector3 vec) {
+    glUseProgram(program_id);
+    glUniform3f(glGetUniformLocation(program_id, name.data()), vec.x, vec.y, vec.z);
+    glUseProgram(0);
 }
 
 void Shader::setInt(std::string name, int val) {
+    glUseProgram(program_id);
     glUniform1i(glGetUniformLocation(program_id, name.data()), val);
+    glUseProgram(0);
 }

@@ -17,6 +17,7 @@
 #include "../include/chunk.hpp"
 #include "../include/object.hpp"
 #include "../include/texture.hpp"
+#include "../include/crosshair.hpp"
 
 
 const int WIDTH = 800;
@@ -27,76 +28,73 @@ int main() {
 
     /* initial setup */
     Window window(WIDTH,HEIGHT,WINDOW_TITLE);
-    Shader program_object("shaders/mesh_shader_vertex.glsl","shaders/mesh_shader_fragment.glsl");
 
+
+
+
+
+    Shader main_program("shaders/mesh_shader_vertex.glsl","shaders/mesh_shader_fragment.glsl");
     /* transforms */
-    vecmath::Vector3 camera_position(0.0f,0.0f,-7.0f);
+    vecmath::Vector3 camera_position(3.0f,-2.0f,3.0f);
     Camera camera(camera_position);
     vecmath::Matrix44 mat;
-    float scale = 1.0f;
-    program_object.use_program();
-    program_object.setMat4("model",mat);
-    program_object.setMat4("perspective",camera.get_perspective());
-    program_object.setMat4("view",camera.get_view());
+    main_program.setMat4("model",mat);
+    main_program.setMat4("perspective",camera.get_perspective());
+    main_program.setMat4("view",camera.get_view());
 
     /* chunk creation */
-    //vecmath::Vector3 chunk_position(0,0,0);
-    //Chunk chunk("savedata/chunk00.txt", chunk_position);
-    //chunk.reconstruct();
     const std::string current_chunk_save("savedata/chunk00.txt");
     const int bounds = 8;
     std::vector<Chunk> world;
     for (int i = 0; i < bounds; i ++) {
         for (int j = 0; j < bounds; j ++) {
-            world.emplace(Chunk(current_chunk_save, i, 0, j));
+            world.emplace_back(Chunk(current_chunk_save, (float)i, 0, (float)j)); // what is the safest cast here?
         }
     }
 
 
     // cleaner setup
-    std::vector<std::string> file_list {"textures/redstone_block.png","textures/ice_block.png","textures/dirt_block.png","textures/stone_block.png"};
-    Texture texture_object(GL_TEXTURE_2D_ARRAY, file_list, 32, 32);
-    texture_object.setActiveTextureUnit(program_object, "array_sampler", 0);
+    std::vector<std::string> file_list {"textures/stone_block.png","textures/ice_block.png","textures/dirt_block.png","textures/stone_block.png"};
+    Texture chunk_texture(GL_TEXTURE_2D_ARRAY, file_list, 32, 32, 1);
 
     /* gl properties */
     glEnable(GL_DEPTH_TEST);
-
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     bool toggle = true;
 
-
-    int x = 0.0f;
-    int y = 0.0f;
-    int z = 3.0f;
+    Crosshair crosshair;
+    Shader gui_program("shaders/gui_shader_vertex.glsl", "shaders/gui_shader_fragment.glsl");
+    std::vector<std::string> crosshair_textures {"textures/cross.png"};
+    Texture crosshair_tex(GL_TEXTURE_2D_ARRAY, crosshair_textures, 32, 32, 0);
 
 
     /* main loop */
     while (window.notClosed()) {
         window.clearScreen();
+        camera.update(window.getRawWindow());
 
         /* chunk drawing */
-        program_object.use_program();
-        chunk.reconstruct();
-        chunk.draw();
-        camera.update(window.getRawWindow());
-        program_object.setMat4("view",camera.get_view());
-
-
-
-        if (glfwGetKey(window.getRawWindow(), GLFW_KEY_P)) {
-            if (toggle) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            toggle = !toggle;
+        chunk_texture.bindToTextureUnit(1);
+        main_program.setInt("array_sampler", 1);
+        main_program.setMat4("view",camera.get_view());
+        main_program.use_program();
+        for (auto & chunk : world) {
+            chunk.reconstruct();
+            chunk.draw();
         }
-      
-        if (glfwGetKey(window.getRawWindow(), GLFW_KEY_G)) {
-            for(auto i : {0,10}) {
-                x+=i;
-                chunk.destroyBlock(x,y,z);
-            }
-        }
-      
 
+        /* crosshair drawing */
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glClearDepth(1.0f);
+        crosshair_tex.bindToTextureUnit(0);
+        gui_program.setInt("sampler", 0);
+        gui_program.use_program();
+        crosshair.draw();
+        glDisable(GL_BLEND);
+
+        /* swap */
         window.pollEvents();
         window.swapBuffers();
     }

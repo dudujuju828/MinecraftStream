@@ -25,4 +25,5 @@ class Shader {
     Shader(std::string vertex_path, std::string fragment_path);
     void setMat4(std::string name,vecmath::Matrix44 mat);
     void setInt(std::string name, int val);
+    void setVec3(std::string name, vecmath::Vector3 vec);
 };

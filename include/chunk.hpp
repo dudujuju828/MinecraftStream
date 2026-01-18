@@ -9,6 +9,7 @@
 #include <string>
 #include <unordered_map>
 #include "../include/math/vector_math.hpp"
+#include "../include/vertex.hpp"
 
 
 enum class cube_face {
@@ -26,11 +27,6 @@ enum class BLOCK_TYPE {
     ICE,
     STONE,
     REDSTONE
-};
-
-struct Vertex {
-    Vertex(float xi, float yi, float zi, float ui, float vi, float wi) : x{xi}, y{yi}, z{zi}, u{ui}, v{vi}, w{wi} {}
-    float x, y, z, u, v, w;
 };
 
 class Chunk {

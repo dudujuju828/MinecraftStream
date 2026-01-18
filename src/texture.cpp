@@ -9,13 +9,14 @@
 #include <stb_image.h>
 
 // up to the user to set the active texture unit
-Texture::Texture(GLenum texture_type, std::vector<std::string> &file_list, int image_width, int image_height) {
+Texture::Texture(GLenum texture_type, std::vector<std::string> &file_list, int image_width, int image_height, int active_unit) {
     switch(texture_type) {
         case GL_TEXTURE_2D_ARRAY:
             /* 2d texture array*/
             width = image_width;
             height = image_height;
             glGenTextures(1,&tex);
+            glActiveTexture(GL_TEXTURE0 + active_unit);   
             glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
             glTexParameteri(GL_TEXTURE_2D_ARRAY,
                         GL_TEXTURE_MIN_FILTER,
@@ -28,8 +29,6 @@ Texture::Texture(GLenum texture_type, std::vector<std::string> &file_list, int i
             int tex_count = file_list.size();
             std::vector<unsigned char*> image_ptr_list(tex_count,nullptr);
             int width, height, format;
-            glActiveTexture(GL_TEXTURE0);   
-
             GLenum type = GL_RGBA;
 
 
@@ -40,12 +39,11 @@ Texture::Texture(GLenum texture_type, std::vector<std::string> &file_list, int i
                 glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, image_width, image_height, 1, type, GL_UNSIGNED_BYTE, image_ptr_list.at(i));
             }
             glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+            glActiveTexture(GL_TEXTURE0);   
     }
 }
 
-void Texture::setActiveTextureUnit(Shader& s, std::string uniform_name, int tex_unit) {
-    s.use_program();
-    glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
+void Texture::bindToTextureUnit(int tex_unit) {
     glActiveTexture(GL_TEXTURE0 + tex_unit);
-    s.setInt(uniform_name.data(),tex_unit);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
 }

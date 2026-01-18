@@ -13,6 +13,12 @@ namespace vecmath {
  
     struct Vector3 {
         Vector3(float x_in, float y_in, float z_in) : x{x_in}, y{y_in}, z{z_in} {}
+        Vector3(int x_in, int y_in, int z_in) : x{0.0f}, y{0.0f}, z{0.0f} {
+            // can this be done better
+            x = (float)x_in;
+            y = (float)y_in;
+            z = (float)z_in;
+        }
         Vector3(Vector3 &vec_in) : x{vec_in.x}, y{vec_in.y}, z{vec_in.z} {}
         Vector3() : x{0.0f}, y{0.0f}, z{0.0f} {}
         float x,y,z;
