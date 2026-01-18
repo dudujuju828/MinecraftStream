@@ -40,12 +40,21 @@ int main() {
     program_object.setMat4("view",camera.get_view());
 
     /* chunk creation */
-    vecmath::Vector3 chunk_position(0,0,0);
-    Chunk chunk("savedata/chunk00.txt", chunk_position);
-    std::vector<std::string> file_list {"textures/redstone_block.png","textures/ice_block.png","textures/dirt_block.png","textures/stone_block.png"};
-    chunk.reconstruct();
+    //vecmath::Vector3 chunk_position(0,0,0);
+    //Chunk chunk("savedata/chunk00.txt", chunk_position);
+    //chunk.reconstruct();
+    const std::string current_chunk_save("savedata/chunk00.txt");
+    const int bounds = 8;
+    std::vector<Chunk> world;
+    for (int i = 0; i < bounds; i ++) {
+        for (int j = 0; j < bounds; j ++) {
+            world.emplace(Chunk(current_chunk_save, i, 0, j));
+        }
+    }
+
 
     // cleaner setup
+    std::vector<std::string> file_list {"textures/redstone_block.png","textures/ice_block.png","textures/dirt_block.png","textures/stone_block.png"};
     Texture texture_object(GL_TEXTURE_2D_ARRAY, file_list, 32, 32);
     texture_object.setActiveTextureUnit(program_object, "array_sampler", 0);
 

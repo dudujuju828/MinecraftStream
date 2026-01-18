@@ -36,6 +36,7 @@ struct Vertex {
 class Chunk {
     public:
     Chunk(std::string_view file_name, vecmath::Vector3 position);
+    Chunk(std::string_view file_name, int x, int y, int z);
 
 
     void constructMesh();

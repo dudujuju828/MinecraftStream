@@ -40,6 +40,33 @@ Chunk::Chunk(std::string_view filename, vecmath::Vector3 pos) : position{pos}, _
     }
 }
 
+Chunk::Chunk(std::string_view filename, int x, int y, int z) : position{x,y,z}, _is_initialized{false}, _dirty{true} {
+    std::ifstream file(filename.data());
+    std::string file_line;
+    while(std::getline(file, file_line, ',')) {
+        try {
+            int type = std::stoi(file_line);
+            switch (type) {
+                case 0:
+                chunk.push_back(BLOCK_TYPE::AIR); 
+                break;
+                case 1:
+                chunk.push_back(BLOCK_TYPE::DIRT); 
+                break;
+                case 2:
+                chunk.push_back(BLOCK_TYPE::ICE);
+                break;
+                case 3:
+                chunk.push_back(BLOCK_TYPE::STONE);
+                default:
+                chunk.push_back(BLOCK_TYPE::DIRT); 
+                break;
+            }
+        } catch (const std::exception& e) {
+            spdlog::error("Error loading chunkfile :{}\nException: {}", filename.data(),e.what());
+        }
+    }
+}
 void Chunk::draw() {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBindVertexArray(VAO);
