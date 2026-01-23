@@ -31,11 +31,9 @@ int main() {
 
 
 
-
-
     Shader main_program("shaders/mesh_shader_vertex.glsl","shaders/mesh_shader_fragment.glsl");
     /* transforms */
-    vecmath::Vector3 camera_position(3.0f,-2.0f,3.0f);
+    vecmath::Vector3 camera_position(3.0f,-1.8f,3.0f);
     Camera camera(camera_position);
     vecmath::Matrix44 mat;
     main_program.setMat4("model",mat);
@@ -52,7 +50,6 @@ int main() {
         }
     }
 
-
     // cleaner setup
     std::vector<std::string> file_list {"textures/stone_block.png","textures/ice_block.png","textures/dirt_block.png","textures/stone_block.png"};
     Texture chunk_texture(GL_TEXTURE_2D_ARRAY, file_list, 32, 32, 1);
@@ -66,6 +63,8 @@ int main() {
     Shader gui_program("shaders/gui_shader_vertex.glsl", "shaders/gui_shader_fragment.glsl");
     std::vector<std::string> crosshair_textures {"textures/cross.png"};
     Texture crosshair_tex(GL_TEXTURE_2D_ARRAY, crosshair_textures, 32, 32, 0);
+
+    camera.emitRay();
 
 
     /* main loop */

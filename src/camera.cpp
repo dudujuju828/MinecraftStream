@@ -5,6 +5,9 @@
 
 #include <spdlog/spdlog.h>
 #include <math.h>
+#include <cmath>
+#include <tuple>
+#include <limits>
 
 Camera::Camera(vecmath::Vector3 position_in) : 
 camera_position{position_in}, 
@@ -29,8 +32,8 @@ firstMouse{true},
 is_fps{true},
 in_jump{false},
 jump_speed{-1.21f},
-default_jump_speed{-1.21f},
-gravity{0.018f}
+default_jump_speed{-1.31f},
+gravity{0.026f}
 {
     set_perspective(projection_near,projection_far,projection_left,projection_right,projection_bottom,projection_top);
 }
@@ -163,7 +166,94 @@ void Camera::poll_input(GLFWwindow * window) {
             camera_position += up * speed;
         }
     }
-    
+}
+
+vecmath::Vector3 Camera::emitRay() {
+
+    // Obtain the float portion
+    vecmath::Vector3 pos_minus_float_portion;
+    float stepX, stepY, stepZ;
+
+    if (camera_position.x < 0.0f) {
+        pos_minus_float_portion.x = std::ceil(camera_position.x) - camera_position.x;
+    } else {
+        stepX = 1.0f;
+        pos_minus_float_portion.x = camera_position.x - std::trunc(camera_position.x);
+    }
+    if (camera_position.y < 0.0f) {
+        stepY = -1.0f;
+        pos_minus_float_portion.y = std::ceil(camera_position.y) - camera_position.y;
+    } else {
+        stepY = 1.0f;
+        pos_minus_float_portion.y = camera_position.y - std::trunc(camera_position.y);
+    }
+    if (camera_position.z < 0.0f) {
+        stepZ = -1.0f;
+        pos_minus_float_portion.z = std::ceil(camera_position.z) - camera_position.z;
+    } else {
+        stepZ = 1.0f;
+        pos_minus_float_portion.z = camera_position.z - std::trunc(camera_position.z);
+    }
+
+    if (front.x < 0.0f) {
+        stepX = -1.0f;
+    } else {
+        stepX = 1.0f;
+    }
+    if (front.y < 0.0f) {
+        stepY = -1.0f;
+    } else {
+        stepY = 1.0f;
+    }
+    if (front.z < 0.0f) {
+        stepZ = -1.0f;
+    } else {
+        stepZ = 1.0f;
+    }
+    // Copy the camera position
+    vecmath::Vector3 ray_position = camera_position; 
+
+    // Copy the camera front vector (off-by-one?)
+    vecmath::Vector3 front_copy = front;
+    float deltaX = front_copy.x == 0.0f ? std::numeric_limits<float>::infinity() :  1 / front_copy.x;
+    float deltaY = front_copy.y == 0.0f ? std::numeric_limits<float>::infinity() :  1 / front_copy.y;
+    float deltaZ = front_copy.z == 0.0f ? std::numeric_limits<float>::infinity() :  1 / front_copy.z;
+
+
+    // pull us to an integer (wait - one at a time depending on deltaX)
+    ray_position.x += pos_minus_float_portion.x;
+    ray_position.y += pos_minus_float_portion.y;
+    ray_position.z += pos_minus_float_portion.z;
+
+    bool hit{false};
+    while (!hit) {
+        if (deltaX < deltaY) {
+            if (deltaX < deltaZ) {
+
+            } else {
+
+            }
+        } else {
+
+        }
+        if (deltaX < deltaZ) {
+
+        } else {
+
+        }
+        if (deltaZ < deltaY) {
+
+        } else {
+
+        }
+
+        ray_position.y += pos_minus_float_portion.y;
+        hit = true;
+    } 
+
+
+
+    return {};
 }
 
 vecmath::Matrix44& Camera::get_perspective() {

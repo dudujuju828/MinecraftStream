@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(GLAD_DIR ${CMAKE_SOURCE_DIR}/external/glad/)
 set(STB_DIR ${CMAKE_SOURCE_DIR}/external/stb/)
-add_executable(main src/main.cpp ${GLAD_DIR}/src/glad.c src/camera.cpp src/shader.cpp src/mesh.cpp src/window.cpp src/chunk.cpp src/texture.cpp src/vertex.cpp src/crosshair.cpp)
+add_executable(main src/main.cpp ${GLAD_DIR}/src/glad.c src/camera.cpp src/shader.cpp src/window.cpp src/chunk.cpp src/texture.cpp src/vertex.cpp src/crosshair.cpp)
 
 include(FetchContent)
 FetchContent_Declare(

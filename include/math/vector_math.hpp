@@ -61,7 +61,7 @@ namespace vecmath {
             z *= scale;
             return *this;
         }
-
+ 
         Vector3& operator-=(const Vector3 &other_vec) {
             x -= other_vec.x;
             y -= other_vec.y;
