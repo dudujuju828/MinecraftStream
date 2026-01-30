@@ -64,8 +64,6 @@ int main() {
     std::vector<std::string> crosshair_textures {"textures/cross.png"};
     Texture crosshair_tex(GL_TEXTURE_2D_ARRAY, crosshair_textures, 32, 32, 0);
 
-    camera.emitRay();
-
 
     /* main loop */
     while (window.notClosed()) {
@@ -80,6 +78,10 @@ int main() {
         for (auto & chunk : world) {
             chunk.reconstruct();
             chunk.draw();
+        }
+
+        if (glfwGetKey(window.getRawWindow(), GLFW_KEY_M) == GLFW_PRESS) {
+            camera.emitRay(world[0]);
         }
 
         /* crosshair drawing */

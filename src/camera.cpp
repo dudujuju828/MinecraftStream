@@ -1,4 +1,5 @@
 
+#include "../include/chunk.hpp"
 #include <GLFW/glfw3.h>
 #include "../include/camera.hpp"
 #include "../include/math/vector_math.hpp"
@@ -168,92 +169,95 @@ void Camera::poll_input(GLFWwindow * window) {
     }
 }
 
-vecmath::Vector3 Camera::emitRay() {
+void Camera::emitRay(Chunk& chunk) {
 
-    // Obtain the float portion
-    vecmath::Vector3 pos_minus_float_portion;
-    float stepX, stepY, stepZ;
+    // Amanatides & Woo DDA
+    // X, Y- current grid indices
+    // stepX, stepY - either -1 or 1 (along each axis)
+    // tMaxX, tMaxY - the value of t, at which the ray crosses a ____ grid-line
+    // tDeltaX, tDeltaY - how much tMaxX, tMaxY increase each time you step to the next voxel
 
-    if (camera_position.x < 0.0f) {
-        pos_minus_float_portion.x = std::ceil(camera_position.x) - camera_position.x;
-    } else {
-        stepX = 1.0f;
-        pos_minus_float_portion.x = camera_position.x - std::trunc(camera_position.x);
-    }
-    if (camera_position.y < 0.0f) {
-        stepY = -1.0f;
-        pos_minus_float_portion.y = std::ceil(camera_position.y) - camera_position.y;
-    } else {
-        stepY = 1.0f;
-        pos_minus_float_portion.y = camera_position.y - std::trunc(camera_position.y);
-    }
-    if (camera_position.z < 0.0f) {
-        stepZ = -1.0f;
-        pos_minus_float_portion.z = std::ceil(camera_position.z) - camera_position.z;
-    } else {
-        stepZ = 1.0f;
-        pos_minus_float_portion.z = camera_position.z - std::trunc(camera_position.z);
-    }
+    // Rules
+    // tMaxX < tMaxY - you cross a vertical boundary first
+    // tMaxX > tMaxY - you cross a horizontal boundary first
+    // Warning: Voxel size is implicitly assumed to be 1
+    // Warning: hard-fixed distance to 5 in all directions
+    
+    // Starting Voxel coordinates (based on the camera position)
+    int X = camera_position.x / 1;
+    int Y = (camera_position.y + 1) / 1;
+    int Z = camera_position.z / 1;
 
-    if (front.x < 0.0f) {
-        stepX = -1.0f;
-    } else {
-        stepX = 1.0f;
-    }
-    if (front.y < 0.0f) {
-        stepY = -1.0f;
-    } else {
-        stepY = 1.0f;
-    }
-    if (front.z < 0.0f) {
-        stepZ = -1.0f;
-    } else {
-        stepZ = 1.0f;
-    }
-    // Copy the camera position
-    vecmath::Vector3 ray_position = camera_position; 
+    int rayDistance = 5;
+    int X_STARTING = camera_position.x / 1;
+    int Y_STARTING = camera_position.y / 1;
+    int Z_STARTING = camera_position.z / 1;
+    // Depending on the ray direction, set stepX and stepY so they allow jumps to integer voxel coordinates
+    int stepX = (front.x < 0) ? -1 : 1;
+    int stepY = (front.y < 0) ? -1 : 1;
+    int stepZ = (front.z < 0) ? -1 : 1;
 
-    // Copy the camera front vector (off-by-one?)
-    vecmath::Vector3 front_copy = front;
-    float deltaX = front_copy.x == 0.0f ? std::numeric_limits<float>::infinity() :  1 / front_copy.x;
-    float deltaY = front_copy.y == 0.0f ? std::numeric_limits<float>::infinity() :  1 / front_copy.y;
-    float deltaZ = front_copy.z == 0.0f ? std::numeric_limits<float>::infinity() :  1 / front_copy.z;
+    // Depending on the step, calculate the next boundaries we expect the ray to intersect
+    int nextBoundaryX = (front.x > 0) ? (X+1) : (X);
+    int nextBoundaryY = (front.y > 0) ? (Y+1) : (Y);
+    int nextBoundaryZ = (front.z > 0) ? (Z+1) : (Z);
 
+    // The amount of t needed, to go from the current position to the next boundary
+    const double INF = std::numeric_limits<double>::infinity();
+    double tMaxX = (front.x != 0.0f) ? (nextBoundaryX - camera_position.x) / front.x : INF;
+    double tMaxY = (front.y != 0.0f) ? (nextBoundaryY - camera_position.y) / front.y : INF;
+    double tMaxZ = (front.z != 0.0f) ? (nextBoundaryZ - camera_position.z) / front.z : INF;
 
-    // pull us to an integer (wait - one at a time depending on deltaX)
-    ray_position.x += pos_minus_float_portion.x;
-    ray_position.y += pos_minus_float_portion.y;
-    ray_position.z += pos_minus_float_portion.z;
+    // The amount of t needed to step one whole voxel (width/height/depth) in either direction
+    double tDeltaX = (front.x != 0.0f) ? (1.0f / std::abs(front.x)) : INF;
+    double tDeltaY = (front.y != 0.0f) ? (1.0f / std::abs(front.y)) : INF;
+    double tDeltaZ = (front.z != 0.0f) ? (1.0f / std::abs(front.z)) : INF;
 
-    bool hit{false};
-    while (!hit) {
-        if (deltaX < deltaY) {
-            if (deltaX < deltaZ) {
-
+    // Change this condition
+    while (true) {
+        if (tMaxX < tMaxY) {
+            if (tMaxX < tMaxZ) {
+                tMaxX = tMaxX + tDeltaX;
+                X = X + stepX;
             } else {
-
+                tMaxZ = tMaxZ + tDeltaZ;
+                Z = Z + stepZ;
             }
         } else {
-
+            if (tMaxY < tMaxZ) {
+                tMaxY = tMaxY + tDeltaY;
+                Y = Y + stepY;
+            } else {
+                tMaxZ = tMaxZ + tDeltaZ;
+                Z = Z + stepZ;
+            }
         }
-        if (deltaX < deltaZ) {
+        // If we get here, and we have not hit a block (as we know we have not returned)
+        // If we have traversed too much in either direction, return
+        if (std::abs(X - X_STARTING) > rayDistance || std::abs(Y - Y_STARTING) > rayDistance ||std::abs(Z - Z_STARTING) > rayDistance) return;
 
-        } else {
 
+        // We will have stepped +1/-1 in a single axis direction.
+        // Obtain the current block
+        BLOCK_TYPE current_block = chunk.getBlock(X,Y,Z);
+
+        // Check if the current block is breakable
+        // (Assuming all blocks are breakable)
+
+        // Check if the current block is air
+        // (In which case we continue the loop, nothing to do (UNLESS we are PLACING a block, then terminate))
+        // (Assuming we are deleting from the chunk)
+
+        if (bool destroying{true}; destroying && (current_block == BLOCK_TYPE::AIR)) continue;
+        else {
+            // Update the current block to air
+            // This might be from (stone... or any other solid block)
+            chunk.setBlock(BLOCK_TYPE::AIR, X,Y,Z);
+            return;
         }
-        if (deltaZ < deltaY) {
 
-        } else {
-
-        }
-
-        ray_position.y += pos_minus_float_portion.y;
-        hit = true;
     } 
 
-
-
-    return {};
 }
 
 vecmath::Matrix44& Camera::get_perspective() {

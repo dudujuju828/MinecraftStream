@@ -40,6 +40,7 @@ class Chunk {
     const int SIZE = 16;
     vecmath::Vector3 position;
     void setBlock(BLOCK_TYPE b_type, int x, int z, int y);
+    BLOCK_TYPE getBlock(int x, int z, int y) const;
     void destroyBlock(int x, int z, int y);
     void reconstruct();
     int getChunkBufferSize() const;
@@ -54,7 +55,6 @@ class Chunk {
     bool _dirty;
     void addFace(std::vector<Vertex> &vertex_vector, const cube_face& face_type, int x_offset, int y_offset, int z_offset, int texture_type);
     std::vector<BLOCK_TYPE> chunk;
-    BLOCK_TYPE getBlock(int x, int z, int y) const;
     const std::unordered_map<BLOCK_TYPE,int> block_texture_map {
         {BLOCK_TYPE::REDSTONE, 0},
         {BLOCK_TYPE::ICE,1},

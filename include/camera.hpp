@@ -2,6 +2,7 @@
 #pragma once
 
 #include "math/vector_math.hpp"
+#include "../include/Chunk.hpp"
 #include <GLFW/glfw3.h>
 
 class Camera {
@@ -46,7 +47,7 @@ class Camera {
    vecmath::Matrix44& get_perspective();
    vecmath::Vector3 get_position();
    vecmath::Matrix44& get_view();
-   vecmath::Vector3 emitRay();
+   void emitRay(Chunk& chunk);
    void update(GLFWwindow * window);
    void poll_input(GLFWwindow * window);
  };
