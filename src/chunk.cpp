@@ -13,6 +13,8 @@
 
 
 Chunk::Chunk(std::string_view filename, vecmath::Vector3 pos) : position{pos}, _is_initialized{false}, _dirty{true} {
+    // REVIEW: no check for file open failure — if the file doesn't exist, the while
+    // loop silently does nothing and the chunk vector stays empty.
     std::ifstream file(filename.data());
     std::string file_line;
     while(std::getline(file, file_line, ',')) {
@@ -20,18 +22,21 @@ Chunk::Chunk(std::string_view filename, vecmath::Vector3 pos) : position{pos}, _
             int type = std::stoi(file_line);
             switch (type) {
                 case 0:
-                chunk.push_back(BLOCK_TYPE::AIR); 
+                chunk.push_back(BLOCK_TYPE::AIR);
                 break;
                 case 1:
-                chunk.push_back(BLOCK_TYPE::DIRT); 
+                chunk.push_back(BLOCK_TYPE::DIRT);
                 break;
                 case 2:
                 chunk.push_back(BLOCK_TYPE::ICE);
                 break;
+                // REVIEW(BUG): missing 'break' before 'default'. Case 3 falls through
+                // into default, so STONE blocks push_back STONE then also push_back DIRT,
+                // doubling the block count for stone entries and corrupting the chunk layout.
                 case 3:
                 chunk.push_back(BLOCK_TYPE::STONE);
                 default:
-                chunk.push_back(BLOCK_TYPE::DIRT); 
+                chunk.push_back(BLOCK_TYPE::DIRT);
                 break;
             }
         } catch (const std::exception& e) {
@@ -40,6 +45,9 @@ Chunk::Chunk(std::string_view filename, vecmath::Vector3 pos) : position{pos}, _
     }
 }
 
+// REVIEW: this constructor is a near-exact copy of the one above. Extract the file-loading
+// logic into a private helper method (e.g. loadFromFile) to eliminate the duplication.
+// REVIEW(BUG): same missing break before default as the other constructor.
 Chunk::Chunk(std::string_view filename, int x, int y, int z) : position{x,y,z}, _is_initialized{false}, _dirty{true} {
     std::ifstream file(filename.data());
     std::string file_line;
@@ -48,10 +56,10 @@ Chunk::Chunk(std::string_view filename, int x, int y, int z) : position{x,y,z}, 
             int type = std::stoi(file_line);
             switch (type) {
                 case 0:
-                chunk.push_back(BLOCK_TYPE::AIR); 
+                chunk.push_back(BLOCK_TYPE::AIR);
                 break;
                 case 1:
-                chunk.push_back(BLOCK_TYPE::DIRT); 
+                chunk.push_back(BLOCK_TYPE::DIRT);
                 break;
                 case 2:
                 chunk.push_back(BLOCK_TYPE::ICE);
@@ -59,7 +67,7 @@ Chunk::Chunk(std::string_view filename, int x, int y, int z) : position{x,y,z}, 
                 case 3:
                 chunk.push_back(BLOCK_TYPE::STONE);
                 default:
-                chunk.push_back(BLOCK_TYPE::DIRT); 
+                chunk.push_back(BLOCK_TYPE::DIRT);
                 break;
             }
         } catch (const std::exception& e) {
@@ -84,6 +92,10 @@ void Chunk::reconstruct() {
 
 void Chunk::constructMesh() {
 
+    // REVIEW: the GL init block below allocates a worst-case buffer of 216*16*16*16 floats
+    // (~3.5 MB per chunk). With 64 chunks that's ~224 MB of GPU memory reserved upfront.
+    // The buffer is then replaced with exact-size data via glBufferData at the bottom of
+    // this function anyway, so this pre-allocation is wasted.
     if (!_is_initialized) {
         glGenBuffers(1, &VBO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -104,6 +116,8 @@ void Chunk::constructMesh() {
             for (int x = 0; x < SIZE; x++) {
                 /* check the neighbouring 6 blocks */
                 /* assume air */
+                // REVIEW: the loop order is y,z,x but getBlock takes (x,z,y) — verify
+                // that this matches the storage layout x + 16*z + 256*y.
                 BLOCK_TYPE current_block = getBlock(x,z,y);
                 if (current_block == BLOCK_TYPE::AIR) continue;
                 BLOCK_TYPE top_block = BLOCK_TYPE::AIR;
@@ -147,11 +161,14 @@ void Chunk::constructMesh() {
                     back_block = getBlock(x, z+1, y);
                 }
                 auto it = block_texture_map.find(current_block);
+                // REVIEW(BUG): block_type is uninitialized if the block type is not found
+                // in the texture map. Using an uninitialized int is undefined behavior.
+                // Initialize it: int block_type = 0; or handle the missing case explicitly.
                 int block_type;
                 if (it != block_texture_map.end()) {
 
                     block_type = it->second;
-                } 
+                }
 
                 if (top_block == BLOCK_TYPE::AIR) {
                     addFace(v, cube_face::TOP, x, z, y, block_type);
@@ -179,6 +196,8 @@ void Chunk::constructMesh() {
     bufferSize = v.size() * 6 * sizeof(float);
     vertexCount = v.size();
 
+    // REVIEW: this GL init block is dead code — _is_initialized was already set to true
+    // by the identical block at the top of this function. Remove this duplicate.
     if (!_is_initialized) {
         glGenBuffers(1, &VBO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -193,6 +212,10 @@ void Chunk::constructMesh() {
         _is_initialized = true;
     }
 
+    // REVIEW: _dirty is always true here because reconstruct() calls constructMesh()
+    // only when _dirty is true. This check is redundant — simplify by removing it.
+    // Also, consider using glBufferSubData instead of glBufferData for re-uploads
+    // to avoid reallocating the GPU buffer every frame a chunk is dirty.
     std::vector<float> flattened_data;
     if (_dirty)  {
         for (auto &vertex : v) {
@@ -210,6 +233,8 @@ void Chunk::constructMesh() {
 
 }
 
+// REVIEW: no bounds checking before the .at() call — if x/z/y are out of [0,15],
+// this throws std::out_of_range. Consider clamping or returning AIR for out-of-bounds.
 BLOCK_TYPE Chunk::getBlock(int x, int z, int y) const {
     return chunk.at(x + (16*z) + (16*16*y));
 }
@@ -280,6 +305,10 @@ void Chunk::addFace(std::vector<Vertex> &vertex_vector, const cube_face& face_ty
     }
 }
 
+// REVIEW(BUG): parameter order here is (type, x, y, z) but the header declares
+// (type, x, z, y). The indexing formula x + 16*z + 256*y assumes y is the "layer"
+// axis. But callers might pass y and z in different orders depending on which
+// declaration they read. This inconsistency is a source of bugs — unify the order.
 void Chunk::setBlock(BLOCK_TYPE b_type, int x, int y, int z) {
     _dirty = true;
     chunk.at(x + (16*z) + (16*16*y)) = b_type;

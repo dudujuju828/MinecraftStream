@@ -37,8 +37,16 @@ class Chunk {
 
     void constructMesh();
     void print() const;
+    // REVIEW: should be 'static constexpr int SIZE = 16'. As a non-static const member,
+    // every Chunk instance carries its own copy, and it can't be used in constant expressions.
     const int SIZE = 16;
+    // REVIEW: position is public while all other data members are private — inconsistent.
+    // Consider making it private with a getter, or documenting why it needs to be public.
     vecmath::Vector3 position;
+    // REVIEW(BUG): setBlock and getBlock have DIFFERENT parameter orders!
+    // setBlock: (type, x, z, y) — but the implementation uses (type, x, y, z)
+    // getBlock: (x, z, y)
+    // This is extremely error-prone. Pick one consistent order (x, y, z) everywhere.
     void setBlock(BLOCK_TYPE b_type, int x, int z, int y);
     BLOCK_TYPE getBlock(int x, int z, int y) const;
     void destroyBlock(int x, int z, int y);
