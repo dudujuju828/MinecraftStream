@@ -9,6 +9,8 @@
 #include <stb_image.h>
 
 // up to the user to set the active texture unit
+// REVIEW: the switch only has one case (GL_TEXTURE_2D_ARRAY). If other texture types
+// aren't planned, remove the switch and validate the type parameter directly.
 Texture::Texture(GLenum texture_type, std::vector<std::string> &file_list, int image_width, int image_height, int active_unit) {
     switch(texture_type) {
         case GL_TEXTURE_2D_ARRAY:
@@ -27,13 +29,24 @@ Texture::Texture(GLenum texture_type, std::vector<std::string> &file_list, int i
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
             int tex_count = file_list.size();
+            // REVIEW(BUG): image_ptr_list stores raw pointers from stbi_load but they
+            // are never freed with stbi_image_free — this is a memory leak. Free each
+            // pointer after glTexSubImage3D uploads it.
             std::vector<unsigned char*> image_ptr_list(tex_count,nullptr);
+            // REVIEW: 'width' and 'height' shadow the member variables of the same name.
+            // These locals are also never used after being declared. The stbi_load call
+            // below uses separate x/y locals instead.
             int width, height, format;
             GLenum type = GL_RGBA;
 
 
             glTexImage3D(GL_TEXTURE_2D_ARRAY,0,type,image_width,image_height,tex_count,0,type,GL_UNSIGNED_BYTE,NULL);
             for (int i = 0; i < tex_count; i++) {
+                // REVIEW: no null check on stbi_load return — if a texture file is missing
+                // or corrupt, image_ptr_list[i] stays nullptr and glTexSubImage3D gets a
+                // null pointer, causing undefined behavior. Also, 'format' shadows the
+                // outer 'format' and the actual format (number of channels) is ignored —
+                // GL_RGBA is hardcoded, so non-RGBA images will load incorrectly.
                 int x, y, format;
                 image_ptr_list.at(i) = stbi_load(file_list.at(i).data(),&x,&y,&format,0);
                 glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, image_width, image_height, 1, type, GL_UNSIGNED_BYTE, image_ptr_list.at(i));

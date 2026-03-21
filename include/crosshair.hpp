@@ -29,6 +29,9 @@ class Crosshair {
 
     GLuint VBO;
     GLuint VAO;
+    // REVIEW: crossHairSize is declared but never used anywhere. The crosshair scale
+    // is hardcoded as 0.18f in the gui_shader_vertex.glsl shader. Remove this or
+    // pass it as a uniform to the shader for consistency.
     const float crossHairSize = 2.0f;
 
 };
