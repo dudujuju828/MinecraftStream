@@ -12,6 +12,12 @@
 #include <string>
 #include <stdexcept>
 
+// REVIEW(BUG): glDrawElements' last parameter should be a byte offset into the element
+// buffer (or 0 if using an EBO), not a raw CPU pointer. Passing indices.data() works
+// only when no EBO is bound (client-side index arrays), but create_gl_buffers below
+// doesn't create an EBO, so indices live on the CPU. This means each draw call uploads
+// indices from RAM to the GPU — very slow. Create an Element Buffer Object (EBO) in
+// create_gl_buffers and pass 0 as the last parameter to glDrawElements.
 void Mesh::drawMesh(GLuint program) {
     glBindVertexArray(vertex_array_id);
     glUseProgram(program);
@@ -26,6 +32,10 @@ void Mesh::drawMesh(GLuint program) {
 1. Converts string_input to float
 2. Adds float to specific array dependent on last_type (v, vn, or vt)
 */
+// REVIEW: this OBJ face-parsing logic is very fragile and hard to follow. The index
+// mapping with global_count and factor produces non-obvious index sequences. Consider
+// using a standard OBJ loader library (e.g. tinyobjloader) or at minimum adding a
+// comment explaining the index remapping strategy.
 void Mesh::add_to_a_buffer(const std::string &string_input, const std::string &last_type, int& global_count, int& factor) {
     try {
         float value = std::stof(string_input);
@@ -104,6 +114,9 @@ void Mesh::setup_buffers(const std::string &f_name) {
     int factor = 0;
 
     std::ifstream file(f_name.c_str());
+    // REVIEW(BUG): logic is inverted — this logs "Failed to open" when the file IS open.
+    // Should be: if (!file.is_open()). Also, same spdlog comma-separated args bug as
+    // in shader.cpp — use {} placeholder: spdlog::warn("Failed to open: {}", f_name);
     if (file.is_open()) {
         spdlog::warn("Failed to open file: ", f_name.c_str());
     }
@@ -132,6 +145,9 @@ void Mesh::setup_buffers(const std::string &f_name) {
 
 }
 
+// REVIEW: no EBO (Element Buffer Object) is created here, yet drawMesh uses
+// glDrawElements with indices. Without an EBO, indices are sent from CPU every frame.
+// Add a GL_ELEMENT_ARRAY_BUFFER for the indices vector.
 void Mesh::create_gl_buffers() {
     glGenBuffers(1,&vertex_buffer_id);
     glBindBuffer(GL_ARRAY_BUFFER,vertex_buffer_id);
