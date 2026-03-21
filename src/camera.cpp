@@ -5,6 +5,8 @@
 #include "../include/math/vector_math.hpp"
 
 #include <spdlog/spdlog.h>
+// REVIEW: <math.h> is the C header — <cmath> (already included below) is the C++ equivalent
+// that places functions in the std:: namespace. Remove <math.h> to avoid duplicate includes.
 #include <math.h>
 #include <cmath>
 #include <tuple>
@@ -39,6 +41,9 @@ gravity{0.026f}
     set_perspective(projection_near,projection_far,projection_left,projection_right,projection_bottom,projection_top);
 }
 
+// REVIEW(BUG): parameters n_p, f_p, l_x, r_x, b_y, t_y are completely ignored.
+// The function body only uses the member variables (projection_near, etc.).
+// Either use the parameters, or change the signature to take no arguments.
 void Camera::set_perspective(float n_p, float f_p, float l_x, float r_x, float b_y, float t_y) {
     perspective_matrix.set_column(vecmath::Vector4(2.0f*projection_near/(projection_right-projection_left), 0.0f,0.0f,0.0f),0);
     perspective_matrix.set_column(vecmath::Vector4(0.0f,2.0f*projection_near/(projection_top-projection_bottom),0.0f,0.0f),1);
@@ -70,6 +75,7 @@ void Camera::update(GLFWwindow * window) {
         pitch -= deltay * mouse_sensitivity;
         yaw   += deltax * mouse_sensitivity;
     }
+    // REVIEW: this second check is the exact inverse of the first — just use 'else'.
     if (firstMouse) {
         firstMouse = false;
     }
@@ -81,6 +87,8 @@ void Camera::update(GLFWwindow * window) {
         pitch = 179.0f;
     }
 
+    // REVIEW: this lambda is recreated every frame. Make it a free function or static
+    // constexpr. Also, the pi value is truncated — use M_PI or define a constexpr constant.
     auto convertDegreesToRadians = [](float degree){
         return degree * (3.141592653/180.0f);
     };
@@ -102,6 +110,8 @@ void Camera::update(GLFWwindow * window) {
     view_matrix.set_column(vecmath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 3);
     vecmath::Matrix44 translation_matrix;
     translation_matrix.set_column(vecmath::Vector4(-camera_position, 1.0f), 3);
+    // REVIEW(BUG): operator*= in Matrix44 has an in-place corruption bug (see
+    // vector_math.hpp review). This multiplication may produce incorrect view matrices.
     view_matrix *= translation_matrix;
     view_matrix.set_row(vecmath::Vector4(0.0f,0.0f,0.0f,1.0f),3);
 }
@@ -147,6 +157,11 @@ void Camera::poll_input(GLFWwindow * window) {
                 jump_speed = default_jump_speed;
             }
     } else {
+        // REVIEW(BUG): in this branch, "front * speed", "right * speed", "up * speed"
+        // all mutate the actual front/right/up vectors due to the broken operator* in
+        // Vector3 (see vector_math.hpp). Each key press permanently corrupts the camera
+        // direction vectors. The FPS branch avoids this for front by using f_copy, but
+        // right is still mutated there too. After fixing operator*, all branches are safe.
         float speed = fly_speed * deltaTime;
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
             camera_position += front * speed;
@@ -183,7 +198,9 @@ void Camera::emitRay(Chunk& chunk) {
     // Warning: Voxel size is implicitly assumed to be 1
     // Warning: hard-fixed distance to 5 in all directions
     
-    // Starting Voxel coordinates (based on the camera position)
+    // REVIEW: dividing by 1 is a no-op — these are just implicit float-to-int truncations.
+    // Use static_cast<int>(camera_position.x) to make the intent explicit.
+    // Also, Y has a +1 offset — document why (eye height? voxel alignment?).
     int X = camera_position.x / 1;
     int Y = (camera_position.y + 1) / 1;
     int Z = camera_position.z / 1;
@@ -248,6 +265,9 @@ void Camera::emitRay(Chunk& chunk) {
         // (In which case we continue the loop, nothing to do (UNLESS we are PLACING a block, then terminate))
         // (Assuming we are deleting from the chunk)
 
+        // REVIEW: the init-statement `bool destroying{true}` is always true, making
+        // the condition equivalent to just `current_block == BLOCK_TYPE::AIR`. If block
+        // placement is planned, consider passing a mode enum to emitRay instead.
         if (bool destroying{true}; destroying && (current_block == BLOCK_TYPE::AIR)) continue;
         else {
             // Update the current block to air
