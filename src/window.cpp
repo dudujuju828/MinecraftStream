@@ -11,11 +11,20 @@ static void window_callback(GLFWwindow* window, int width, int height) {
 }
 
 /* CAN ONLY USE 1 WINDOW ATM */
+// REVIEW: glfwInit is called inside the Window constructor. If you ever create a second
+// Window, glfwInit will be called again (harmless but wasteful). Consider initializing
+// GLFW once in main() or a dedicated init function.
 Window::Window(int width, int height, std::string name) : window_name{name} {
+    // REVIEW: no glfwWindowHint calls before window creation — the OpenGL version is
+    // left to the driver's default. Add hints for the target version, e.g.:
+    //   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    //   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    //   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     if (!glfwInit()) {
         spdlog::error("GLFW not initialize.");
         exit(-1);
     } else {
+        // REVIEW: typo — "initailized" should be "initialized".
         spdlog::info("Successfully initailized GLFW.");
     }
 
@@ -32,8 +41,11 @@ Window::Window(int width, int height, std::string name) : window_name{name} {
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         spdlog::error("Error loading OpenGL function pointers.");
         exit(-1);
-    } 
+    }
     spdlog::info("OpenGL function pointers loaded in successfully.");
+    // REVIEW: exit(-1) is used for all error paths. Consider throwing an exception
+    // instead, so the destructor can run and resources are properly cleaned up.
+    // exit() does not unwind the stack.
 
     glfwSetInputMode(raw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowSizeCallback(raw_window,window_callback);
