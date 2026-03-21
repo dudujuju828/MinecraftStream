@@ -21,6 +21,10 @@ public:
     void bind() const;
     vecmath::Matrix44 getModelMatrix() const;
 
+    // REVIEW: model, program_id, mesh, and transform are all public despite the class
+    // having a public/private split. If external access is needed, add getters.
+    // Having the Mesh as a direct member means Object can't be default-constructed
+    // or copied easily (Mesh has GL resources). Consider using a pointer or handle.
     vecmath::Matrix44 model;
     GLuint program_id;
     Mesh mesh;

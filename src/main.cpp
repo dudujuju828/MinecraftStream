@@ -44,6 +44,9 @@ int main() {
     const std::string current_chunk_save("savedata/chunk00.txt");
     const int bounds = 8;
     std::vector<Chunk> world;
+    // REVIEW: every chunk loads the same save file (chunk00.txt) — all 64 chunks are
+    // identical. Also, Chunk(string_view, int, int, int) takes ints, so the (float) casts
+    // are unnecessary. Use: Chunk(current_chunk_save, i, 0, j)
     for (int i = 0; i < bounds; i ++) {
         for (int j = 0; j < bounds; j ++) {
             world.emplace_back(Chunk(current_chunk_save, (float)i, 0, (float)j)); // what is the safest cast here?
@@ -57,6 +60,7 @@ int main() {
     /* gl properties */
     glEnable(GL_DEPTH_TEST);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    // REVIEW: 'toggle' is declared but never read or modified — dead variable, remove it.
     bool toggle = true;
 
     Crosshair crosshair;
@@ -75,16 +79,26 @@ int main() {
         main_program.setInt("array_sampler", 1);
         main_program.setMat4("view",camera.get_view());
         main_program.use_program();
+        // REVIEW: reconstruct() is called every frame for every chunk, but most chunks
+        // are not dirty. The _dirty check is inside reconstruct(), so the call overhead
+        // is minimal, but if you add more chunks this loop should only iterate dirty ones.
         for (auto & chunk : world) {
             chunk.reconstruct();
             chunk.draw();
         }
 
+        // REVIEW(BUG): emitRay only targets world[0] — block breaking only works on the
+        // first chunk. Should convert the ray's world-space position to chunk coordinates
+        // and target the correct chunk. Also, holding M fires a ray every frame — add a
+        // key debounce so it only fires once per press.
         if (glfwGetKey(window.getRawWindow(), GLFW_KEY_M) == GLFW_PRESS) {
             camera.emitRay(world[0]);
         }
 
         /* crosshair drawing */
+        // REVIEW: glClearDepth should be called BEFORE glClear — it sets the clear value,
+        // then glClear uses it. In this order, glClear uses the previous clear value.
+        // (Default is 1.0 anyway, so it works, but the intent is backwards.)
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
         glClear(GL_DEPTH_BUFFER_BIT);
